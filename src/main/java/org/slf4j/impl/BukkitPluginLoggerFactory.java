@@ -87,7 +87,7 @@ public class BukkitPluginLoggerFactory implements ILoggerFactory {
         try {
           pluginYmlFile.close();
         } catch (final IOException e) {
-          // ignore
+          e.printStackTrace();
         }
       }
     }

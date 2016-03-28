@@ -65,7 +65,6 @@ public class BukkitPluginLoggerFactory implements ILoggerFactory {
 
   public BukkitPluginLoggerFactory() {
     this.loggerMap = new ConcurrentHashMap<String, Logger>();
-    BukkitPluginLoggerAdapter.init();
     // ensure jul initialization. see also SLF4J-359
     java.util.logging.LogManager.getLogManager();
   }

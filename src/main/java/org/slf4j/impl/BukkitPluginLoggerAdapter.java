@@ -1,4 +1,8 @@
 /*
+ * This entire file is sublicensed to you under GPLv3 or (at your option) any
+ * later version. The original copyright notice is retained below.
+ */
+/*
  * Portions of this file are
  * Copyright (C) 2016 Ronald Jack Jenkins Jr.
  *
@@ -14,10 +18,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-/*
- * This entire file is sublicensed to you under GPLv3 or (at your option) any
- * later version. The original copyright notice is retained below.
  */
 /**
  * Copyright (c) 2004-2011 QOS.ch

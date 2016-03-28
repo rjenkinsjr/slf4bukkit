@@ -1,4 +1,8 @@
 /*
+ * This entire file is sublicensed to you under GPLv3 or (at your option) any
+ * later version. The original copyright notice is retained below.
+ */
+/*
  * Portions of this file are
  * Copyright (C) 2016 Ronald Jack Jenkins Jr.
  *
@@ -14,10 +18,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-/*
- * This entire file is sublicensed to you under GPLv3 or (at your option) any
- * later version. The original copyright notice is retained below.
  */
 /**
  * Copyright (c) 2004-2011 QOS.ch
@@ -59,8 +59,7 @@ public class StaticLoggerBinder implements LoggerFactoryBinder {
 
   /**
    * Declare the version of the SLF4J API this implementation is compiled
-   * against.
-   * The value of this field is modified with each major release.
+   * against. The value of this field is modified with each major release.
    */
   // to avoid constant folding by the compiler, this field must *not* be final
   public static String                    REQUESTED_API_VERSION = "1.6.99";                                 // !final
@@ -69,7 +68,6 @@ public class StaticLoggerBinder implements LoggerFactoryBinder {
 
   /**
    * The unique instance of this class.
-   *
    */
   private static final StaticLoggerBinder SINGLETON             = new StaticLoggerBinder();
 
@@ -80,7 +78,6 @@ public class StaticLoggerBinder implements LoggerFactoryBinder {
   private final ILoggerFactory            loggerFactory;
 
   private StaticLoggerBinder() {
-    // Note: JCL gets substituted at build time by an appropriate Ant task
     this.loggerFactory = new BukkitPluginLoggerFactory();
   }
 

@@ -66,62 +66,92 @@ import org.yaml.snakeyaml.Yaml;
 /**
  * <p>
  * A merger of SLF4J's {@code SimpleLogger} and {@code JDK14LoggerAdapter},
- * wired to log all messages to the Bukkit plugin found in this class's
- * classloader (by way of reading plugin.yml).
+ * wired to log all messages to the enclosing Bukkit plugin. The plugin is
+ * identified by reading the "name" attribute from {@code plugin.yml} in the
+ * current classloader.
  * </p>
  *
  * <p>
- * SLF4J messages at level {@code TRACE} or {@code DEBUG} are logged to Bukkit
- * at level {@link Level#INFO} because Bukkit does not enable any levels higher
- * than {@code INFO}. Therefore, only SLF4J messages at level {@code TRACE} or
- * {@code DEBUG} show their SLF4J level in the message that is logged to the
- * server console.
- * </p>
- *
- * <p>
- * Plugins that shade SLF4Bukkit can use the following values in config.yml to
- * configure the behavior of this logger:
+ * Plugins that include SLF4Bukkit can use the following values in
+ * {@code config.yml} to configure the behavior of SLF4Bukkit. SLF4Bukkit uses
+ * Bukkit's plugin configuration API to retrieve config values, so both on-disk
+ * and built-in {@code config.yml} behavior is supported.
  * </p>
  *
  * <ul>
- * <li><code>slf4j.defaultLogLevel</code> - Default log level for all instances
- * of SimpleLogger. Must be one of ("trace", "debug", "info", "warn", or
- * "error"). If not specified, defaults to "info".</li>
+ * <li><code>slf4j.defaultLogLevel</code> - Default log level for all SLF4Bukkit
+ * loggers in this plugin. Must be one of "trace", "debug", "info", "warn", or
+ * "error". Defaults to "info".</li>
  *
- * <li><code>slf4j.log.<em>a.b.c</em></code> - Logging detail level for a
- * SimpleLogger instance named "a.b.c". Right-side value must be one of "trace",
- * "debug", "info", "warn", or "error". When a SimpleLogger named "a.b.c" is
- * initialized, its level is assigned from this property. If unspecified, the
- * level of nearest parent logger will be used, and if none is set, then the
- * value specified by <code>slf4j.defaultLogLevel</code> will be used.</li>
+ * <li><code>slf4j.log.<em>a.b.c</em></code> - Logging detail level for an
+ * SLF4Bukkit logger instance in this plugin named "a.b.c". Right-side value
+ * must be one of "trace", "debug", "info", "warn", or "error". When a logger
+ * named "a.b.c" is initialized, its level is assigned from this property. If
+ * unspecified, the level of the nearest parent logger will be used. If no
+ * parent logger level is set, then the value specified by
+ * <code>slf4j.defaultLogLevel</code> for this plugin will be used.</li>
  *
  * <li><code>slf4j.showHeader</code> -Set to <code>true</code> if you want to
- * output the [SLF4J]. Defaults to <code>false</code>.</li>
+ * output the {@code [SLF4J]} header. Defaults to <code>false</code>.</li>
  *
  * <li><code>slf4j.showThreadName</code> -Set to <code>true</code> if you want
  * to output the current thread name. Defaults to <code>false</code>.</li>
  *
  * <li><code>slf4j.showLogName</code> - Set to <code>true</code> if you want the
- * Logger instance name to be included in output messages. Defaults to
+ * logger instance name to be included in output messages. Defaults to
  * <code>false</code>.</li>
  *
  * <li><code>slf4j.showShortLogName</code> - Set to <code>true</code> if you
- * want the last component of the name to be included in output messages.
+ * want the logger instance's short name to be included in output messages. The
+ * short name is equal to the full name with every dot-separated portion of the
+ * full name (except the last portion) truncated to its first character.
  * Defaults to <code>true</code>.</li>
- *
  * </ul>
  *
  * <p>
- * Because SLF4Bukkit's configuration comes from the plugin configuration,
- * SLF4Bukkit supports configuration reloading (assuming the containing plugin
- * supports config reloading). To achieve this, call {@link #init()} after
- * calling {@link Plugin#reloadConfig()}.
+ * SLF4J messages at level {@code TRACE} or {@code DEBUG} are logged to Bukkit
+ * at level {@code INFO} because Bukkit does not enable any levels higher than
+ * {@code INFO}. Therefore, only SLF4J messages at level {@code TRACE} or
+ * {@code DEBUG} show their SLF4J level in the message that is logged to the
+ * server console.
  * </p>
  *
  * <p>
- * With no configuration, the default output includes the thread name, the SLF4J
- * level (only if it differs from the Bukkit level; see above), logger name, and
- * the message followed by the line separator for the host.
+ * Because SLF4Bukkit's configuration comes from the plugin configuration,
+ * SLF4Bukkit supports configuration reloading. To achieve this, call
+ * {@link #init()} with argument {@code true} after calling
+ * {@link Plugin#reloadConfig()}.
+ * </p>
+ * 
+ * <p>
+ * It is possible for SLF4J loggers to be used before the plugin is registered
+ * with Bukkit's plugin manager. SLF4Bukkit is considered to be
+ * <i>uninitialized</i> as long as the plugin cannot be retrieved from Bukkit's
+ * plugin manager. While in the uninitialized state, SLF4Bukkit:
+ * </p>
+ * 
+ * <ul>
+ * <li>uses {@link Bukkit#getLogger()} instead of {@link Plugin#getLogger()}.</li>
+ * <li>uses the default configuration values (see above).</li>
+ * <li>attempts to initialize itself upon every logging call until the plugin is
+ * retrievable from Bukkit's plugin manager, at which point SLF4Bukkit is
+ * considered to be <i>initialized</i>. Once initialized,
+ * {@link Plugin#getLogger()} and {@link Plugin#getConfig() the plugin YAML
+ * configuration values} are used.</li>
+ * </ul>
+ * 
+ * <p>
+ * For this reason, it is strongly recommended that you not emit any log
+ * messages via SLF4Bukkit until your plugin's {@link Plugin#onLoad() onLoad()}
+ * method has begun execution. (You can safely log messages inside the
+ * {@code onLoad()} method, because your plugin is registered by that time.)
+ * Logging inside static initializers, the plugin class constructor and other
+ * pre-plugin-registration areas of your code is discouraged.
+ * </p>
+ *
+ * <p>
+ * With no configuration, the default output includes the logger short name and
+ * the message, followed by the line separator for the host.
  * </p>
  *
  * @author Ceki G&uuml;lc&uuml;
@@ -138,6 +168,7 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase
 
   // Plugin reference.
   private static transient Plugin BUKKIT_PLUGIN;
+  private static transient String BUKKIT_PLUGIN_NAME;
   // Constants for JUL record creation.
   private static final String     CLASS_SELF                          = BukkitPluginLoggerAdapter.class.getName();
   private static final String     CLASS_SUPER                         = MarkerIgnoringBase.class.getName();
@@ -158,8 +189,6 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase
   private static boolean          CONFIG_SHOW_LOG_NAME;
   private static boolean          CONFIG_SHOW_SHORT_LOG_NAME;
   private static boolean          CONFIG_SHOW_THREAD_NAME;
-  // Initialization status.
-  private static boolean          INIT_FAILURE_WARNED                 = false;
   // Initialization lock.
   private static final Object     INITIALIZATION_LOCK                 = new Object();
   // Logging level constants.
@@ -189,7 +218,7 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase
 
   /**
    * (Re)initializes all SLF4Bukkit loggers, relying on the YAML configuration
-   * of the containing plugin.
+   * of the enclosing plugin.
    *
    * @param reinitialize
    *          set to {@code true} to reinitialize all loggers, e.g. after
@@ -200,43 +229,37 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase
       // Do not re-initialize unless requested.
       if (reinitialize) {
         BukkitPluginLoggerAdapter.BUKKIT_PLUGIN = null;
+        BUKKIT_PLUGIN_NAME = null;
       } else if (BukkitPluginLoggerAdapter.BUKKIT_PLUGIN != null) { return; }
       // Get a reference to the plugin in this classloader.
-      InputStream pluginYmlFile = null;
-      String pluginName;
-      try {
-        pluginYmlFile = BukkitPluginLoggerAdapter.class.getClassLoader()
-                                                       .getResource("plugin.yml")
-                                                       .openStream();
-        final Yaml yaml = new Yaml();
-        @SuppressWarnings("rawtypes")
-        final Map pluginYml = (Map) yaml.load(pluginYmlFile);
-        pluginName = (String) pluginYml.get("name");
-      } catch (final IOException e) {
-        throw new IllegalStateException(e);
-      } finally {
-        if (pluginYmlFile != null) {
-          try {
-            pluginYmlFile.close();
-          } catch (final IOException e) {
-            e.printStackTrace();
+      if (BUKKIT_PLUGIN_NAME == null) {
+        InputStream pluginYmlFile = null;
+        try {
+          pluginYmlFile = BukkitPluginLoggerAdapter.class.getClassLoader()
+                                                         .getResource("plugin.yml")
+                                                         .openStream();
+          final Yaml yaml = new Yaml();
+          @SuppressWarnings("rawtypes")
+          final Map pluginYml = (Map) yaml.load(pluginYmlFile);
+          BUKKIT_PLUGIN_NAME = (String) pluginYml.get("name");
+        } catch (final IOException e) {
+          throw new IllegalStateException(e);
+        } finally {
+          if (pluginYmlFile != null) {
+            try {
+              pluginYmlFile.close();
+            } catch (final IOException e) {
+              e.printStackTrace();
+            }
           }
         }
       }
-      // Get the plugin.
+      // Try to get the plugin. The logging system will be considered
+      // uninitialized until this becomes non-null. While it is null, the Bukkit
+      // server logger will be used instead of the plugin logger, and all
+      // default configuration options will be used.
       BukkitPluginLoggerAdapter.BUKKIT_PLUGIN = Bukkit.getPluginManager()
-                                                      .getPlugin(pluginName);
-      if (BukkitPluginLoggerAdapter.BUKKIT_PLUGIN == null) {
-        // Initialization failed.
-        if (!BukkitPluginLoggerAdapter.INIT_FAILURE_WARNED) {
-          System.err.println("WARN: SLF4Bukkit could not be initialized for plugin "
-                             + pluginName + "; default configuration assumed!");
-        }
-        BukkitPluginLoggerAdapter.INIT_FAILURE_WARNED = true;
-      } else {
-        // Initialization successful.
-        BukkitPluginLoggerAdapter.INIT_FAILURE_WARNED = false;
-      }
+                                                      .getPlugin(BUKKIT_PLUGIN_NAME);
       // Get the configuration values.
       // 1. Look in the plugin's on-disk config.
       // 2. If the value is absent, use the plugin's built-in config.

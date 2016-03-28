@@ -46,6 +46,9 @@ package org.slf4j.impl;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -157,6 +160,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase
   private static boolean          CONFIG_SHOW_THREAD_NAME;
   // Initialization status.
   private static boolean          INIT_FAILURE_WARNED                 = false;
+  // Initialization lock.
+  private static final Object     INITIALIZATION_LOCK                 = new Object();
   // Logging level constants.
   private static final int        LOG_LEVEL_DEBUG                     = LocationAwareLogger.DEBUG_INT;
   private static final int        LOG_LEVEL_ERROR                     = LocationAwareLogger.ERROR_INT;
@@ -191,7 +196,7 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase
    *          reloading the plugin config.
    */
   public static void init(final boolean reinitialize) {
-    synchronized (BukkitPluginLoggerAdapter.BUKKIT_PLUGIN) {
+    synchronized (BukkitPluginLoggerAdapter.INITIALIZATION_LOCK) {
       // Do not re-initialize unless requested.
       if (reinitialize) {
         BukkitPluginLoggerAdapter.BUKKIT_PLUGIN = null;
@@ -252,7 +257,7 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase
 
   private static boolean getBooleanProperty(final String name,
                                             final boolean defaultValue) {
-    synchronized (BukkitPluginLoggerAdapter.BUKKIT_PLUGIN) {
+    synchronized (BukkitPluginLoggerAdapter.INITIALIZATION_LOCK) {
       if (BukkitPluginLoggerAdapter.BUKKIT_PLUGIN == null) { return defaultValue; }
       final String prop = BukkitPluginLoggerAdapter.BUKKIT_PLUGIN.getConfig()
                                                                  .getString(name);
@@ -267,7 +272,7 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase
    *         logger. Never null.
    */
   private static Logger getBukkitLogger() {
-    synchronized (BukkitPluginLoggerAdapter.BUKKIT_PLUGIN) {
+    synchronized (BukkitPluginLoggerAdapter.INITIALIZATION_LOCK) {
       return BukkitPluginLoggerAdapter.BUKKIT_PLUGIN == null ? Bukkit.getLogger()
                                                             : BukkitPluginLoggerAdapter.BUKKIT_PLUGIN.getLogger();
     }
@@ -275,7 +280,7 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase
 
   private static String getStringProperty(final String name,
                                           final String defaultValue) {
-    synchronized (BukkitPluginLoggerAdapter.BUKKIT_PLUGIN) {
+    synchronized (BukkitPluginLoggerAdapter.INITIALIZATION_LOCK) {
       if (BukkitPluginLoggerAdapter.BUKKIT_PLUGIN == null) { return defaultValue; }
       final String prop = BukkitPluginLoggerAdapter.BUKKIT_PLUGIN.getConfig()
                                                                  .getString(name);
@@ -585,6 +590,20 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase
              BukkitPluginLoggerAdapter.LOG_LEVEL_WARN, msg, t);
   }
 
+  private String computeShortName() {
+    final List<String> splitName = new ArrayList<String>();
+    splitName.addAll(Arrays.asList(this.name.split("\\.")));
+    final int shortNameLength = ((splitName.size() - 1) * 2)
+                                + splitName.get(splitName.size() - 1).length();
+    final String finalName = splitName.remove(splitName.size() - 1);
+    final StringBuffer shortName = new StringBuffer(shortNameLength);
+    for (final String part : splitName) {
+      shortName.append(part.charAt(0)).append('.');
+    }
+    shortName.append(finalName);
+    return shortName.toString();
+  }
+
   /**
    * For formatted messages, first substitute arguments and then log.
    *
@@ -695,7 +714,6 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase
     // Note: parameters in record are not set because SLF4J only
     // supports a single formatting style
     this.julFillCallerData(callerFQCN, record);
-    System.out.println(logger);
     logger.log(record);
   }
 
@@ -714,51 +732,50 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase
    */
   private void log(final String callerFQCN, final int level,
                    final String message, final Throwable t) {
-    // Determine which logger will be used.
-    final Logger logger = BukkitPluginLoggerAdapter.getBukkitLogger();
-
-    // Ensure that the logger will accept this request.
-    BukkitPluginLoggerAdapter.init(false);
-    if (!this.isLevelEnabled(level)) { return; }
+    final Logger logger;
+    synchronized (BukkitPluginLoggerAdapter.INITIALIZATION_LOCK) {
+      // Ensure that the logger will accept this request.
+      BukkitPluginLoggerAdapter.init(false);
+      if (!this.isLevelEnabled(level)) { return; }
+      // Determine which logger will be used.
+      logger = BukkitPluginLoggerAdapter.getBukkitLogger();
+    }
 
     // Prepare message
     final StringBuilder buf = new StringBuilder(32);
 
     // Indicate that this message comes from SLF4J
-    buf.append('[');
     if (BukkitPluginLoggerAdapter.CONFIG_SHOW_HEADER) {
       buf.append("SLF4J");
     }
 
-    // Append a readable representation of the log level, but only for log
-    // levels that Bukkit would otherwise eat
+    // Print a readable representation of the log level (but only for log levels
+    // that Bukkit would otherwise eat)
     switch (level) {
       case LOG_LEVEL_TRACE:
-        if (BukkitPluginLoggerAdapter.CONFIG_SHOW_HEADER) {
-          buf.append('|');
-        }
-        buf.append("TRACE");
+        buf.append("[TRACE]");
         break;
       case LOG_LEVEL_DEBUG:
-        if (BukkitPluginLoggerAdapter.CONFIG_SHOW_HEADER) {
-          buf.append('|');
-        }
-        buf.append("DEBUG");
+        buf.append("[DEBUG]");
         break;
     }
-    buf.append("] ");
 
     // Append current thread name if so configured
     if (BukkitPluginLoggerAdapter.CONFIG_SHOW_THREAD_NAME) {
       buf.append('[');
       buf.append(Thread.currentThread().getName());
-      buf.append("] ");
+      buf.append("]");
+    }
+
+    // Buffer the current output with a space, unless there is no output.
+    if (buf.length() > 0) {
+      buf.append(' ');
     }
 
     // Append the name of the log instance if so configured
     if (BukkitPluginLoggerAdapter.CONFIG_SHOW_SHORT_LOG_NAME) {
       if (this.shortLogName == null) {
-        this.shortLogName = this.name.substring(this.name.lastIndexOf(".") + 1);
+        this.shortLogName = this.computeShortName();
       }
       buf.append(String.valueOf(this.shortLogName)).append(" - ");
     } else if (BukkitPluginLoggerAdapter.CONFIG_SHOW_LOG_NAME) {

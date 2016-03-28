@@ -79,8 +79,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase
 
   transient final java.util.logging.Logger logger;
 
-  // WARN: JDK14LoggerAdapter constructor should have only package access so
-  // that only JDK14LoggerFactory be able to create one.
+  // WARN: BukkitPluginLoggerAdapter constructor should have only package access
+  // so that only BukkitPluginLoggerFactory be able to create one.
   BukkitPluginLoggerAdapter(final String pluginName) {
     this.logger = Bukkit.getPluginManager().getPlugin(pluginName).getLogger();
     this.name = this.logger.getName();

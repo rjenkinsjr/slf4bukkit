@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright (C) 2016 Ronald Jack Jenkins Jr.
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+  
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+  
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>info.ronjenkins</groupId>
+  <artifactId>slf4bukkit</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <name>SLF4Bukkit</name>
+  <description>SLF4J binding that uses Bukkit's plugin logging system.</description>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>1.7</maven.compiler.source>
+    <maven.compiler.target>1.7</maven.compiler.target>
+    <sonar.java.source>${maven.compiler.source}</sonar.java.source>
+    <rtr.allowExternalSnapshots>true</rtr.allowExternalSnapshots>
+    <tagNameFormat>@{project.version}</tagNameFormat>
+  </properties>
+  <scm>
+    <connection>scm:git:git://github.com/rjenkinsjr/slf4bukkit.git</connection>
+    <developerConnection>scm:git:git@github.com:rjenkinsjr/slf4bukkit.git</developerConnection>
+    <url>https://github.com/rjenkinsjr/slf4bukkit</url>
+  </scm>
+  <licenses>
+    <license>
+      <name>GNU GENERAL PUBLIC LICENSE - Version 3, 29 June 2007</name>
+      <url>http://www.gnu.org/licenses/gpl.html</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <!-- Dependencies -->
+  <dependencies>
+    <dependency>
+      <groupId>org.bukkit</groupId>
+      <artifactId>bukkit</artifactId>
+      <version>1.9-R0.1-SNAPSHOT</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.19</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+  <!-- Build behavior -->
+  <build>
+    <defaultGoal>clean install</defaultGoal>
+    <resources>
+      <resource>
+        <directory>${project.basedir}/src/main/resources</directory>
+      </resource>
+      <resource>
+        <directory>${project.basedir}</directory>
+        <includes>
+          <include>LICENSE</include>
+        </includes>
+      </resource>
+    </resources>
+  </build>
+  <profiles>
+    <!-- SonarQube analysis profile. -->
+    <profile>
+      <id>sonarqube</id>
+      <activation>
+        <property>
+          <name>sonar.host.url</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.sonarsource.scanner.maven</groupId>
+            <artifactId>sonar-maven-plugin</artifactId>
+            <version>3.0.1</version>
+            <executions>
+              <execution>
+                <id>sonarqube-analysis</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sonar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <!-- Things to do only for releases. -->
+    <profile>
+      <id>release</id>
+      <activation>
+        <property>
+          <name>rtr.release</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <!-- Write POM version to properties file. -->
+          <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <version>1.8</version>
+            <executions>
+              <execution>
+                <id>write-properties-file</id>
+                <phase>initialize</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <propertyfile file="${project.basedir}/version.properties">
+                      <entry key="RELEASE_POM_VERSION" value="${project.version}" />
+                    </propertyfile>
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

@@ -20,7 +20,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 /**
- * Copyright (c) 2004-2011 QOS.ch
+ * Copyright (c) 2004-2012 QOS.ch
  * All rights reserved.
  *
  * Permission is hereby granted, free  of charge, to any person obtaining
@@ -44,26 +44,84 @@
  */
 package org.slf4j.impl;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
-import org.slf4j.Logger;
 import org.slf4j.Marker;
-import org.slf4j.event.EventConstants;
-import org.slf4j.event.LoggingEvent;
 import org.slf4j.helpers.FormattingTuple;
 import org.slf4j.helpers.MarkerIgnoringBase;
 import org.slf4j.helpers.MessageFormatter;
 import org.slf4j.spi.LocationAwareLogger;
+import org.yaml.snakeyaml.Yaml;
 
 /**
- * A wrapper over a {@link Plugin Bukkit plugin}'s JUL logger in conformity with
- * the {@link Logger} interface. Note that the logging levels mentioned in this
- * class refer to those defined in the java.util.logging package.
+ * <p>
+ * A merger of SLF4J's {@code SimpleLogger} and {@code JDK14LoggerAdapter},
+ * wired to log all messages to the Bukkit plugin found in this plugin's
+ * classloader (by way of reading plugin.yml).
+ * </p>
+ *
+ * <p>
+ * SLF4J messages at level {@code TRACE} or {@code DEBUG} are logged to Bukkit
+ * at level {@link Level#INFO} because Bukkit does not enable any levels higher
+ * than {@code INFO}. Therefore, only SLF4J messages at level {@code TRACE} or
+ * {@code DEBUG} show their SLF4J level in the message that is logged to the
+ * server console.
+ * </p>
+ *
+ * <p>
+ * Plugins that shade SLF4Bukkit can use the following values in config.yml to
+ * configure the behavior of this logger:
+ * </p>
+ *
+ * <ul>
+ * <li><code>slf4j.defaultLogLevel</code> - Default log level for all instances
+ * of SimpleLogger. Must be one of ("trace", "debug", "info", "warn", or
+ * "error"). If not specified, defaults to "info".</li>
+ *
+ * <li><code>slf4j.log.<em>a.b.c</em></code> - Logging detail level for a
+ * SimpleLogger instance named "a.b.c". Right-side value must be one of "trace",
+ * "debug", "info", "warn", or "error". When a SimpleLogger named "a.b.c" is
+ * initialized, its level is assigned from this property. If unspecified, the
+ * level of nearest parent logger will be used, and if none is set, then the
+ * value specified by <code>slf4j.defaultLogLevel</code> will be used.</li>
+ *
+ * <li><code>slf4j.showThreadName</code> -Set to <code>true</code> if you want
+ * to output the current thread name. Defaults to <code>true</code>.</li>
+ *
+ * <li><code>slf4j.showLogName</code> - Set to <code>true</code> if you want the
+ * Logger instance name to be included in output messages. Defaults to
+ * <code>true</code>.</li>
+ *
+ * <li><code>slf4j.showShortLogName</code> - Set to <code>true</code> if you
+ * want the last component of the name to be included in output messages.
+ * Defaults to <code>false</code>.</li>
+ *
+ * </ul>
+ *
+ * <p>
+ * Because SLF4Bukkit's configuration comes from the plugin configuration,
+ * SLF4Bukkit supports configuration reloading (assuming the containing plugin
+ * supports config reloading). To achieve this, call {@link #init()} after
+ * calling {@link Plugin#reloadConfig()}.
+ * </p>
+ *
+ * <p>
+ * With no configuration, the default output includes the thread name, the SLF4J
+ * level (only if it differs from the Bukkit level; see above), logger name, and
+ * the message followed by the line separator for the host.
+ * </p>
  *
  * @author Ceki G&uuml;lc&uuml;
+ * @author <a href="mailto:sanders@apache.org">Scott Sanders</a>
+ * @author Rod Waldhoff
+ * @author Robert Burrell Donkin
+ * @author C&eacute;drik LIME
  * @author Peter Royal
  * @author Ronald Jack Jenkins Jr.
  */
@@ -71,618 +129,404 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase
                                                                        implements
                                                                        LocationAwareLogger {
 
-  static String                            SELF             = BukkitPluginLoggerAdapter.class.getName();
+  // Plugin reference.
+  private static transient Plugin BUKKIT_PLUGIN;
 
-  static String                            SUPER            = MarkerIgnoringBase.class.getName();
-
-  private static final long                serialVersionUID = 643332807329452230L;
-
-  transient final java.util.logging.Logger logger;
+  // Configuration parameters.
+  private static int              CONFIG_DEFAULT_LOG_LEVEL;
+  private static final String     CONFIG_FALLBACK_DEFAULT_LOG_LEVEL   = "info";
+  private static final boolean    CONFIG_FALLBACK_SHOW_LOG_NAME       = true;
+  private static final boolean    CONFIG_FALLBACK_SHOW_SHORT_LOG_NAME = false;
+  private static final boolean    CONFIG_FALLBACK_SHOW_THREAD_NAME    = true;
+  private static final String     CONFIG_KEY_DEFAULT_LOG_LEVEL        = "slf4j.defaultLogLevel";
+  private static final String     CONFIG_KEY_PREFIX_LOG               = "slf4j.log.";
+  private static final String     CONFIG_KEY_SHOW_LOG_NAME            = "slf4j.showLogName";
+  private static final String     CONFIG_KEY_SHOW_SHORT_LOG_NAME      = "slf4j.showShortLogName";
+  private static final String     CONFIG_KEY_SHOW_THREAD_NAME         = "slf4j.showThreadName";
+  private static boolean          CONFIG_SHOW_LOG_NAME;
+  private static boolean          CONFIG_SHOW_SHORT_LOG_NAME;
+  private static boolean          CONFIG_SHOW_THREAD_NAME;
+  // Logging level constants.
+  private static final int        LOG_LEVEL_DEBUG                     = LocationAwareLogger.DEBUG_INT;
+  private static final int        LOG_LEVEL_ERROR                     = LocationAwareLogger.ERROR_INT;
+  private static final int        LOG_LEVEL_INFO                      = LocationAwareLogger.INFO_INT;
+  private static final int        LOG_LEVEL_TRACE                     = LocationAwareLogger.TRACE_INT;
+  private static final int        LOG_LEVEL_WARN                      = LocationAwareLogger.WARN_INT;
+  // Constants for JUL record creation.
+  private static final String     SELF                                = BukkitPluginLoggerAdapter.class.getName();
+  private static final long       serialVersionUID                    = -2270127287235697381L;
+  private static final String     SUPER                               = MarkerIgnoringBase.class.getName();
+  /** The current log level */
+  protected int                   currentLogLevel                     = BukkitPluginLoggerAdapter.LOG_LEVEL_INFO;
+  /** The short name of this simple log instance */
+  private transient String        shortLogName                        = null;
 
   // WARN: BukkitPluginLoggerAdapter constructor should have only package access
   // so that only BukkitPluginLoggerFactory be able to create one.
-  BukkitPluginLoggerAdapter(final String pluginName) {
-    this.logger = Bukkit.getPluginManager().getPlugin(pluginName).getLogger();
-    this.name = this.logger.getName();
+  BukkitPluginLoggerAdapter(final String name) {
+    this.name = name;
+    final String levelString = this.recursivelyComputeLevelString();
+    if (levelString != null) {
+      this.currentLogLevel = BukkitPluginLoggerAdapter.stringToLevel(levelString);
+    } else {
+      this.currentLogLevel = BukkitPluginLoggerAdapter.CONFIG_DEFAULT_LOG_LEVEL;
+    }
   }
 
+  // Initialize class attributes, relying on plugin configuration.
+  public static void init() {
+    // Get a reference to the plugin in this classloader.
+    InputStream pluginYmlFile = null;
+    try {
+      pluginYmlFile = BukkitPluginLoggerAdapter.class.getClassLoader()
+                                                     .getResource("plugin.yml")
+                                                     .openStream();
+      final Yaml yaml = new Yaml();
+      @SuppressWarnings("rawtypes")
+      final Map pluginYml = (Map) yaml.load(pluginYmlFile);
+      BukkitPluginLoggerAdapter.BUKKIT_PLUGIN = Bukkit.getPluginManager()
+                                                      .getPlugin((String) pluginYml.get("name"));
+    } catch (final IOException e) {
+      throw new IllegalStateException(e);
+    } finally {
+      if (pluginYmlFile != null) {
+        try {
+          pluginYmlFile.close();
+        } catch (final IOException e) {
+          e.printStackTrace();
+        }
+      }
+    }
+    // Get the configuration values.
+    // 1. Look in the plugin's on-disk config.
+    // 2. If the value is absent, use the plugin's built-in config.
+    // 3. If the value is absent, use the default values hardcoded above.
+    // (1 and 2 are handled by using the Bukkit API.)
+    BukkitPluginLoggerAdapter.CONFIG_DEFAULT_LOG_LEVEL = BukkitPluginLoggerAdapter.stringToLevel(BukkitPluginLoggerAdapter.getStringProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_DEFAULT_LOG_LEVEL,
+                                                                                                                                             BukkitPluginLoggerAdapter.CONFIG_FALLBACK_DEFAULT_LOG_LEVEL));
+    BukkitPluginLoggerAdapter.CONFIG_SHOW_LOG_NAME = BukkitPluginLoggerAdapter.getBooleanProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_SHOW_LOG_NAME,
+                                                                                                  BukkitPluginLoggerAdapter.CONFIG_FALLBACK_SHOW_LOG_NAME);
+    BukkitPluginLoggerAdapter.CONFIG_SHOW_SHORT_LOG_NAME = BukkitPluginLoggerAdapter.getBooleanProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_SHOW_SHORT_LOG_NAME,
+                                                                                                        BukkitPluginLoggerAdapter.CONFIG_FALLBACK_SHOW_SHORT_LOG_NAME);
+    BukkitPluginLoggerAdapter.CONFIG_SHOW_THREAD_NAME = BukkitPluginLoggerAdapter.getBooleanProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_SHOW_THREAD_NAME,
+                                                                                                     BukkitPluginLoggerAdapter.CONFIG_FALLBACK_SHOW_THREAD_NAME);
+  }
+
+  private static boolean getBooleanProperty(final String name,
+                                            final boolean defaultValue) {
+    final String prop = BukkitPluginLoggerAdapter.BUKKIT_PLUGIN.getConfig()
+                                                               .getString(name);
+    return (prop == null) ? defaultValue : "true".equalsIgnoreCase(prop);
+  }
+
+  private static String getStringProperty(final String name,
+                                          final String defaultValue) {
+    final String prop = BukkitPluginLoggerAdapter.BUKKIT_PLUGIN.getConfig()
+                                                               .getString(name);
+    return (prop == null) ? defaultValue : prop;
+  }
+
+  private static int stringToLevel(final String levelStr) {
+    if ("trace".equalsIgnoreCase(levelStr)) {
+      return BukkitPluginLoggerAdapter.LOG_LEVEL_TRACE;
+    } else if ("debug".equalsIgnoreCase(levelStr)) {
+      return BukkitPluginLoggerAdapter.LOG_LEVEL_DEBUG;
+    } else if ("info".equalsIgnoreCase(levelStr)) {
+      return BukkitPluginLoggerAdapter.LOG_LEVEL_INFO;
+    } else if ("warn".equalsIgnoreCase(levelStr)) {
+      return BukkitPluginLoggerAdapter.LOG_LEVEL_WARN;
+    } else if ("error".equalsIgnoreCase(levelStr)) {
+      return BukkitPluginLoggerAdapter.LOG_LEVEL_ERROR;
+    } else {
+      return BukkitPluginLoggerAdapter.LOG_LEVEL_INFO;
+    }
+  }
+
+  /*
+   * Logger API implementations
+   */
+
   /**
-   * Log a message object at level FINE.
-   *
-   * @param msg
-   *          - the message object to be logged
+   * A simple implementation which logs messages of level DEBUG according
+   * to the format outlined above.
    */
   @Override
   public void debug(final String msg) {
-    if (this.logger.isLoggable(Level.FINE)) {
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.FINE, msg, null);
-    }
+    this.log(BukkitPluginLoggerAdapter.SELF,
+             BukkitPluginLoggerAdapter.LOG_LEVEL_DEBUG, msg, null);
   }
 
   /**
-   * Log a message at level FINE according to the specified format and argument.
-   *
-   * <p>
-   * This form avoids superfluous object creation when the logger is disabled
-   * for level FINE.
-   * </p>
-   *
-   * @param format
-   *          the format string
-   * @param arg
-   *          the argument
+   * Perform single parameter substitution before logging the message of level
+   * DEBUG according to the format outlined above.
    */
   @Override
-  public void debug(final String format, final Object arg) {
-    if (this.logger.isLoggable(Level.FINE)) {
-      final FormattingTuple ft = MessageFormatter.format(format, arg);
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.FINE, ft.getMessage(),
-               ft.getThrowable());
-    }
+  public void debug(final String format, final Object param1) {
+    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_DEBUG, format,
+                      param1, null);
   }
 
   /**
-   * Log a message at level FINE according to the specified format and
-   * arguments.
-   *
-   * <p>
-   * This form avoids superfluous object creation when the logger is disabled
-   * for the FINE level.
-   * </p>
-   *
-   * @param format
-   *          the format string
-   * @param argArray
-   *          an array of arguments
+   * Perform double parameter substitution before logging the message of level
+   * DEBUG according to the format outlined above.
    */
   @Override
   public void debug(final String format, final Object... argArray) {
-    if (this.logger.isLoggable(Level.FINE)) {
-      final FormattingTuple ft = MessageFormatter.arrayFormat(format, argArray);
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.FINE, ft.getMessage(),
-               ft.getThrowable());
-    }
+    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_DEBUG, format,
+                      argArray);
   }
 
   /**
-   * Log a message at level FINE according to the specified format and
-   * arguments.
-   *
-   * <p>
-   * This form avoids superfluous object creation when the logger is disabled
-   * for the FINE level.
-   * </p>
-   *
-   * @param format
-   *          the format string
-   * @param arg1
-   *          the first argument
-   * @param arg2
-   *          the second argument
+   * Perform double parameter substitution before logging the message of level
+   * DEBUG according to the format outlined above.
    */
   @Override
-  public void debug(final String format, final Object arg1, final Object arg2) {
-    if (this.logger.isLoggable(Level.FINE)) {
-      final FormattingTuple ft = MessageFormatter.format(format, arg1, arg2);
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.FINE, ft.getMessage(),
-               ft.getThrowable());
-    }
+  public void debug(final String format, final Object param1,
+                    final Object param2) {
+    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_DEBUG, format,
+                      param1, param2);
   }
 
-  /**
-   * Log an exception (throwable) at level FINE with an accompanying message.
-   *
-   * @param msg
-   *          the message accompanying the exception
-   * @param t
-   *          the exception (throwable) to log
-   */
+  /** Log a message of level DEBUG, including an exception. */
   @Override
   public void debug(final String msg, final Throwable t) {
-    if (this.logger.isLoggable(Level.FINE)) {
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.FINE, msg, t);
-    }
+    this.log(BukkitPluginLoggerAdapter.SELF,
+             BukkitPluginLoggerAdapter.LOG_LEVEL_DEBUG, msg, t);
   }
 
   /**
-   * Log a message object at the SEVERE level.
-   *
-   * @param msg
-   *          - the message object to be logged
+   * A simple implementation which always logs messages of level ERROR according
+   * to the format outlined above.
    */
   @Override
   public void error(final String msg) {
-    if (this.logger.isLoggable(Level.SEVERE)) {
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.SEVERE, msg, null);
-    }
+    this.log(BukkitPluginLoggerAdapter.SELF,
+             BukkitPluginLoggerAdapter.LOG_LEVEL_ERROR, msg, null);
   }
 
   /**
-   * Log a message at the SEVERE level according to the specified format and
-   * argument.
-   *
-   * <p>
-   * This form avoids superfluous object creation when the logger is disabled
-   * for the SEVERE level.
-   * </p>
-   *
-   * @param format
-   *          the format string
-   * @param arg
-   *          the argument
+   * Perform single parameter substitution before logging the message of level
+   * ERROR according to the format outlined above.
    */
   @Override
   public void error(final String format, final Object arg) {
-    if (this.logger.isLoggable(Level.SEVERE)) {
-      final FormattingTuple ft = MessageFormatter.format(format, arg);
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.SEVERE, ft.getMessage(),
-               ft.getThrowable());
-    }
+    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_ERROR, format, arg,
+                      null);
   }
 
   /**
-   * Log a message at level SEVERE according to the specified format and
-   * arguments.
-   *
-   * <p>
-   * This form avoids superfluous object creation when the logger is disabled
-   * for the SEVERE level.
-   * </p>
-   *
-   * @param format
-   *          the format string
-   * @param arguments
-   *          an array of arguments
+   * Perform double parameter substitution before logging the message of level
+   * ERROR according to the format outlined above.
    */
   @Override
-  public void error(final String format, final Object... arguments) {
-    if (this.logger.isLoggable(Level.SEVERE)) {
-      final FormattingTuple ft = MessageFormatter.arrayFormat(format, arguments);
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.SEVERE, ft.getMessage(),
-               ft.getThrowable());
-    }
+  public void error(final String format, final Object... argArray) {
+    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_ERROR, format,
+                      argArray);
   }
 
   /**
-   * Log a message at the SEVERE level according to the specified format and
-   * arguments.
-   *
-   * <p>
-   * This form avoids superfluous object creation when the logger is disabled
-   * for the SEVERE level.
-   * </p>
-   *
-   * @param format
-   *          the format string
-   * @param arg1
-   *          the first argument
-   * @param arg2
-   *          the second argument
+   * Perform double parameter substitution before logging the message of level
+   * ERROR according to the format outlined above.
    */
   @Override
   public void error(final String format, final Object arg1, final Object arg2) {
-    if (this.logger.isLoggable(Level.SEVERE)) {
-      final FormattingTuple ft = MessageFormatter.format(format, arg1, arg2);
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.SEVERE, ft.getMessage(),
-               ft.getThrowable());
-    }
+    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_ERROR, format, arg1,
+                      arg2);
   }
 
-  /**
-   * Log an exception (throwable) at the SEVERE level with an accompanying
-   * message.
-   *
-   * @param msg
-   *          the message accompanying the exception
-   * @param t
-   *          the exception (throwable) to log
-   */
+  /** Log a message of level ERROR, including an exception. */
   @Override
   public void error(final String msg, final Throwable t) {
-    if (this.logger.isLoggable(Level.SEVERE)) {
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.SEVERE, msg, t);
-    }
+    this.log(BukkitPluginLoggerAdapter.SELF,
+             BukkitPluginLoggerAdapter.LOG_LEVEL_ERROR, msg, t);
   }
 
   /**
-   * Log a message object at the INFO level.
-   *
-   * @param msg
-   *          - the message object to be logged
+   * A simple implementation which logs messages of level INFO according
+   * to the format outlined above.
    */
   @Override
   public void info(final String msg) {
-    if (this.logger.isLoggable(Level.INFO)) {
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.INFO, msg, null);
-    }
+    this.log(BukkitPluginLoggerAdapter.SELF,
+             BukkitPluginLoggerAdapter.LOG_LEVEL_INFO, msg, null);
   }
 
   /**
-   * Log a message at level INFO according to the specified format and argument.
-   *
-   * <p>
-   * This form avoids superfluous object creation when the logger is disabled
-   * for the INFO level.
-   * </p>
-   *
-   * @param format
-   *          the format string
-   * @param arg
-   *          the argument
+   * Perform single parameter substitution before logging the message of level
+   * INFO according to the format outlined above.
    */
   @Override
   public void info(final String format, final Object arg) {
-    if (this.logger.isLoggable(Level.INFO)) {
-      final FormattingTuple ft = MessageFormatter.format(format, arg);
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.INFO, ft.getMessage(),
-               ft.getThrowable());
-    }
+    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_INFO, format, arg,
+                      null);
   }
 
   /**
-   * Log a message at level INFO according to the specified format and
-   * arguments.
-   *
-   * <p>
-   * This form avoids superfluous object creation when the logger is disabled
-   * for the INFO level.
-   * </p>
-   *
-   * @param format
-   *          the format string
-   * @param argArray
-   *          an array of arguments
+   * Perform double parameter substitution before logging the message of level
+   * INFO according to the format outlined above.
    */
   @Override
   public void info(final String format, final Object... argArray) {
-    if (this.logger.isLoggable(Level.INFO)) {
-      final FormattingTuple ft = MessageFormatter.arrayFormat(format, argArray);
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.INFO, ft.getMessage(),
-               ft.getThrowable());
-    }
+    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_INFO, format,
+                      argArray);
   }
 
   /**
-   * Log a message at the INFO level according to the specified format and
-   * arguments.
-   *
-   * <p>
-   * This form avoids superfluous object creation when the logger is disabled
-   * for the INFO level.
-   * </p>
-   *
-   * @param format
-   *          the format string
-   * @param arg1
-   *          the first argument
-   * @param arg2
-   *          the second argument
+   * Perform double parameter substitution before logging the message of level
+   * INFO according to the format outlined above.
    */
   @Override
   public void info(final String format, final Object arg1, final Object arg2) {
-    if (this.logger.isLoggable(Level.INFO)) {
-      final FormattingTuple ft = MessageFormatter.format(format, arg1, arg2);
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.INFO, ft.getMessage(),
-               ft.getThrowable());
-    }
+    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_INFO, format, arg1,
+                      arg2);
   }
 
-  /**
-   * Log an exception (throwable) at the INFO level with an accompanying
-   * message.
-   *
-   * @param msg
-   *          the message accompanying the exception
-   * @param t
-   *          the exception (throwable) to log
-   */
+  /** Log a message of level INFO, including an exception. */
   @Override
   public void info(final String msg, final Throwable t) {
-    if (this.logger.isLoggable(Level.INFO)) {
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.INFO, msg, t);
-    }
+    this.log(BukkitPluginLoggerAdapter.SELF,
+             BukkitPluginLoggerAdapter.LOG_LEVEL_INFO, msg, t);
   }
 
-  /**
-   * Is this logger instance enabled for the FINE level?
-   *
-   * @return True if this Logger is enabled for level FINE, false otherwise.
-   */
+  /** Are {@code debug} messages currently enabled? */
   @Override
   public boolean isDebugEnabled() {
-    return this.logger.isLoggable(Level.FINE);
+    return this.isLevelEnabled(BukkitPluginLoggerAdapter.LOG_LEVEL_DEBUG);
   }
 
-  /**
-   * Is this logger instance enabled for level SEVERE?
-   *
-   * @return True if this Logger is enabled for level SEVERE, false otherwise.
-   */
+  /** Are {@code error} messages currently enabled? */
   @Override
   public boolean isErrorEnabled() {
-    return this.logger.isLoggable(Level.SEVERE);
+    return this.isLevelEnabled(BukkitPluginLoggerAdapter.LOG_LEVEL_ERROR);
   }
 
-  /**
-   * Is this logger instance enabled for the INFO level?
-   *
-   * @return True if this Logger is enabled for the INFO level, false otherwise.
-   */
+  /** Are {@code info} messages currently enabled? */
   @Override
   public boolean isInfoEnabled() {
-    return this.logger.isLoggable(Level.INFO);
+    return this.isLevelEnabled(BukkitPluginLoggerAdapter.LOG_LEVEL_INFO);
   }
 
-  /**
-   * Is this logger instance enabled for the FINEST level?
-   *
-   * @return True if this Logger is enabled for level FINEST, false otherwise.
-   */
+  /** Are {@code trace} messages currently enabled? */
   @Override
   public boolean isTraceEnabled() {
-    return this.logger.isLoggable(Level.FINEST);
+    return this.isLevelEnabled(BukkitPluginLoggerAdapter.LOG_LEVEL_TRACE);
   }
 
-  /**
-   * Is this logger instance enabled for the WARNING level?
-   *
-   * @return True if this Logger is enabled for the WARNING level, false
-   *         otherwise.
-   */
+  /** Are {@code warn} messages currently enabled? */
   @Override
   public boolean isWarnEnabled() {
-    return this.logger.isLoggable(Level.WARNING);
+    return this.isLevelEnabled(BukkitPluginLoggerAdapter.LOG_LEVEL_WARN);
   }
 
   /**
-   * @since 1.7.15
+   * Location-aware logging capability. The marker and argArray are ignored.
    */
-  public void log(final LoggingEvent event) {
-    final Level julLevel = this.slf4jLevelIntToJULLevel(event.getLevel()
-                                                             .toInt());
-    if (this.logger.isLoggable(julLevel)) {
-      final LogRecord record = this.eventToRecord(event, julLevel);
-      this.logger.log(record);
-    }
-  }
-
   @Override
   public void log(final Marker marker, final String callerFQCN,
                   final int level, final String message,
                   final Object[] argArray, final Throwable t) {
-    final Level julLevel = this.slf4jLevelIntToJULLevel(level);
-    // the logger.isLoggable check avoids the unconditional
-    // construction of location data for disabled log
-    // statements. As of 2008-07-31, callers of this method
-    // do not perform this check. See also
-    // http://jira.qos.ch/browse/SLF4J-81
-    if (this.logger.isLoggable(julLevel)) {
-      this.log(callerFQCN, julLevel, message, t);
-    }
+    if (!this.isLevelEnabled(level)) { return; }
+    this.log(callerFQCN, level, message, t);
   }
 
   /**
-   * Log a message object at level FINEST.
-   *
-   * @param msg
-   *          - the message object to be logged
+   * A simple implementation which logs messages of level TRACE according
+   * to the format outlined above.
    */
   @Override
   public void trace(final String msg) {
-    if (this.logger.isLoggable(Level.FINEST)) {
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.FINEST, msg, null);
-    }
+    this.log(BukkitPluginLoggerAdapter.SELF,
+             BukkitPluginLoggerAdapter.LOG_LEVEL_TRACE, msg, null);
   }
 
   /**
-   * Log a message at level FINEST according to the specified format and
-   * argument.
-   *
-   * <p>
-   * This form avoids superfluous object creation when the logger is disabled
-   * for level FINEST.
-   * </p>
-   *
-   * @param format
-   *          the format string
-   * @param arg
-   *          the argument
+   * Perform single parameter substitution before logging the message of level
+   * TRACE according to the format outlined above.
    */
   @Override
-  public void trace(final String format, final Object arg) {
-    if (this.logger.isLoggable(Level.FINEST)) {
-      final FormattingTuple ft = MessageFormatter.format(format, arg);
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.FINEST, ft.getMessage(),
-               ft.getThrowable());
-    }
+  public void trace(final String format, final Object param1) {
+    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_TRACE, format,
+                      param1, null);
   }
 
   /**
-   * Log a message at level FINEST according to the specified format and
-   * arguments.
-   *
-   * <p>
-   * This form avoids superfluous object creation when the logger is disabled
-   * for the FINEST level.
-   * </p>
-   *
-   * @param format
-   *          the format string
-   * @param argArray
-   *          an array of arguments
+   * Perform double parameter substitution before logging the message of level
+   * TRACE according to the format outlined above.
    */
   @Override
   public void trace(final String format, final Object... argArray) {
-    if (this.logger.isLoggable(Level.FINEST)) {
-      final FormattingTuple ft = MessageFormatter.arrayFormat(format, argArray);
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.FINEST, ft.getMessage(),
-               ft.getThrowable());
-    }
+    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_TRACE, format,
+                      argArray);
   }
 
   /**
-   * Log a message at level FINEST according to the specified format and
-   * arguments.
-   *
-   * <p>
-   * This form avoids superfluous object creation when the logger is disabled
-   * for the FINEST level.
-   * </p>
-   *
-   * @param format
-   *          the format string
-   * @param arg1
-   *          the first argument
-   * @param arg2
-   *          the second argument
+   * Perform double parameter substitution before logging the message of level
+   * TRACE according to the format outlined above.
    */
   @Override
-  public void trace(final String format, final Object arg1, final Object arg2) {
-    if (this.logger.isLoggable(Level.FINEST)) {
-      final FormattingTuple ft = MessageFormatter.format(format, arg1, arg2);
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.FINEST, ft.getMessage(),
-               ft.getThrowable());
-    }
+  public void trace(final String format, final Object param1,
+                    final Object param2) {
+    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_TRACE, format,
+                      param1, param2);
   }
 
-  /**
-   * Log an exception (throwable) at level FINEST with an accompanying message.
-   *
-   * @param msg
-   *          the message accompanying the exception
-   * @param t
-   *          the exception (throwable) to log
-   */
+  /** Log a message of level TRACE, including an exception. */
   @Override
   public void trace(final String msg, final Throwable t) {
-    if (this.logger.isLoggable(Level.FINEST)) {
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.FINEST, msg, t);
-    }
+    this.log(BukkitPluginLoggerAdapter.SELF,
+             BukkitPluginLoggerAdapter.LOG_LEVEL_TRACE, msg, t);
   }
 
   /**
-   * Log a message object at the WARNING level.
-   *
-   * @param msg
-   *          - the message object to be logged
+   * A simple implementation which always logs messages of level WARN according
+   * to the format outlined above.
    */
   @Override
   public void warn(final String msg) {
-    if (this.logger.isLoggable(Level.WARNING)) {
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.WARNING, msg, null);
-    }
+    this.log(BukkitPluginLoggerAdapter.SELF,
+             BukkitPluginLoggerAdapter.LOG_LEVEL_WARN, msg, null);
   }
 
   /**
-   * Log a message at the WARNING level according to the specified format and
-   * argument.
-   *
-   * <p>
-   * This form avoids superfluous object creation when the logger is disabled
-   * for the WARNING level.
-   * </p>
-   *
-   * @param format
-   *          the format string
-   * @param arg
-   *          the argument
+   * Perform single parameter substitution before logging the message of level
+   * WARN according to the format outlined above.
    */
   @Override
   public void warn(final String format, final Object arg) {
-    if (this.logger.isLoggable(Level.WARNING)) {
-      final FormattingTuple ft = MessageFormatter.format(format, arg);
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.WARNING, ft.getMessage(),
-               ft.getThrowable());
-    }
+    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_WARN, format, arg,
+                      null);
   }
 
   /**
-   * Log a message at level WARNING according to the specified format and
-   * arguments.
-   *
-   * <p>
-   * This form avoids superfluous object creation when the logger is disabled
-   * for the WARNING level.
-   * </p>
-   *
-   * @param format
-   *          the format string
-   * @param argArray
-   *          an array of arguments
+   * Perform double parameter substitution before logging the message of level
+   * WARN according to the format outlined above.
    */
   @Override
   public void warn(final String format, final Object... argArray) {
-    if (this.logger.isLoggable(Level.WARNING)) {
-      final FormattingTuple ft = MessageFormatter.arrayFormat(format, argArray);
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.WARNING, ft.getMessage(),
-               ft.getThrowable());
-    }
+    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_WARN, format,
+                      argArray);
   }
 
   /**
-   * Log a message at the WARNING level according to the specified format and
-   * arguments.
-   *
-   * <p>
-   * This form avoids superfluous object creation when the logger is disabled
-   * for the WARNING level.
-   * </p>
-   *
-   * @param format
-   *          the format string
-   * @param arg1
-   *          the first argument
-   * @param arg2
-   *          the second argument
+   * Perform double parameter substitution before logging the message of level
+   * WARN according to the format outlined above.
    */
   @Override
   public void warn(final String format, final Object arg1, final Object arg2) {
-    if (this.logger.isLoggable(Level.WARNING)) {
-      final FormattingTuple ft = MessageFormatter.format(format, arg1, arg2);
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.WARNING, ft.getMessage(),
-               ft.getThrowable());
-    }
+    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_WARN, format, arg1,
+                      arg2);
   }
 
-  /**
-   * Log an exception (throwable) at the WARNING level with an accompanying
-   * message.
-   *
-   * @param msg
-   *          the message accompanying the exception
-   * @param t
-   *          the exception (throwable) to log
-   */
+  /** Log a message of level WARN, including an exception. */
   @Override
   public void warn(final String msg, final Throwable t) {
-    if (this.logger.isLoggable(Level.WARNING)) {
-      this.log(BukkitPluginLoggerAdapter.SELF, Level.WARNING, msg, t);
-    }
+    this.log(BukkitPluginLoggerAdapter.SELF,
+             BukkitPluginLoggerAdapter.LOG_LEVEL_WARN, msg, t);
   }
 
-  private LogRecord
-      eventToRecord(final LoggingEvent event, final Level julLevel) {
-    final String format = event.getMessage();
-    final Object[] arguments = event.getArgumentArray();
-    final FormattingTuple ft = MessageFormatter.arrayFormat(format, arguments);
-    if ((ft.getThrowable() != null) && (event.getThrowable() != null)) { throw new IllegalArgumentException(
-                                                                                                            "both last element in argument array and last argument are of type Throwable"); }
-
-    Throwable t = event.getThrowable();
-    if (ft.getThrowable() != null) {
-      t = ft.getThrowable();
-      throw new IllegalStateException("fix above code");
-    }
-
-    final LogRecord record = new LogRecord(julLevel, ft.getMessage());
-    record.setLoggerName(event.getLoggerName());
-    record.setMillis(event.getTimeStamp());
-    record.setSourceClassName(EventConstants.NA_SUBST);
-    record.setSourceMethodName(EventConstants.NA_SUBST);
-
-    record.setThrown(t);
-    return record;
-  }
+  /*
+   * SimpleLogger functionality
+   */
 
   /**
    * Fill in caller data if possible.
@@ -690,8 +534,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase
    * @param record
    *          The record to update
    */
-  final private void fillCallerData(final String callerFQCN,
-                                    final LogRecord record) {
+  final private void bukkitFillCallerData(final String callerFQCN,
+                                          final LogRecord record) {
     final StackTraceElement[] steArray = new Throwable().getStackTrace();
 
     int selfIndex = -1;
@@ -733,34 +577,159 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase
    * @param msg
    * @param t
    */
-  private void log(final String callerFQCN, final Level level,
-                   final String msg, final Throwable t) {
+  private void bukkitLog(final String callerFQCN, final Level level,
+                         final String msg, final Throwable t) {
     // millis and thread are filled by the constructor
     final LogRecord record = new LogRecord(level, msg);
     record.setLoggerName(this.getName());
     record.setThrown(t);
     // Note: parameters in record are not set because SLF4J only
     // supports a single formatting style
-    this.fillCallerData(callerFQCN, record);
-    this.logger.log(record);
+    this.bukkitFillCallerData(callerFQCN, record);
+    BukkitPluginLoggerAdapter.BUKKIT_PLUGIN.getLogger().log(record);
   }
 
-  private Level slf4jLevelIntToJULLevel(final int slf4jLevelInt) {
+  /**
+   * For formatted messages, first substitute arguments and then log.
+   *
+   * @param level
+   * @param format
+   * @param arguments
+   *          a list of 3 ore more arguments
+   */
+  private void formatAndLog(final int level, final String format,
+                            final Object... arguments) {
+    if (!this.isLevelEnabled(level)) { return; }
+    final FormattingTuple tp = MessageFormatter.arrayFormat(format, arguments);
+    this.log(BukkitPluginLoggerAdapter.SELF, level, tp.getMessage(),
+             tp.getThrowable());
+  }
+
+  /**
+   * For formatted messages, first substitute arguments and then log.
+   *
+   * @param level
+   * @param format
+   * @param arg1
+   * @param arg2
+   */
+  private void formatAndLog(final int level, final String format,
+                            final Object arg1, final Object arg2) {
+    if (!this.isLevelEnabled(level)) { return; }
+    final FormattingTuple tp = MessageFormatter.format(format, arg1, arg2);
+    this.log(BukkitPluginLoggerAdapter.SELF, level, tp.getMessage(),
+             tp.getThrowable());
+  }
+
+  /**
+   * Is the given log level currently enabled?
+   *
+   * @param logLevel
+   *          is this level enabled?
+   */
+  private boolean isLevelEnabled(final int logLevel) {
+    // log level are numerically ordered so can use simple numeric comparison
+    //
+    // the PLUGIN.getLogger().isLoggable() check avoids the unconditional
+    // construction of location data for disabled log statements. As of
+    // 2008-07-31, callers of this method do not perform this check. See also
+    // http://jira.qos.ch/browse/SLF4J-81
+    return (logLevel >= this.currentLogLevel)
+           && (BukkitPluginLoggerAdapter.BUKKIT_PLUGIN.getLogger().isLoggable(this.slf4jLevelIntToBukkitJULLevel(logLevel)));
+  }
+
+  /**
+   * This is our internal implementation for logging regular (non-parameterized)
+   * log messages.
+   *
+   * @param callerFQCN
+   *          the FQCN of the class that is calling the logger
+   * @param level
+   *          One of the LOG_LEVEL_XXX constants defining the log level
+   * @param message
+   *          The message itself
+   * @param t
+   *          The exception whose stack trace should be logged
+   */
+  private void log(final String callerFQCN, final int level,
+                   final String message, final Throwable t) {
+    if (!this.isLevelEnabled(level)) { return; }
+
+    final StringBuilder buf = new StringBuilder(32);
+
+    // Indicate that this message comes from SLF4J
+    buf.append("[SLF4J");
+
+    // Append a readable representation of the log level, but only for log
+    // levels that Bukkit would otherwise eat
+    switch (level) {
+      case LOG_LEVEL_TRACE:
+        buf.append(":TRACE");
+        break;
+      case LOG_LEVEL_DEBUG:
+        buf.append(":DEBUG");
+        break;
+    }
+    buf.append("] ");
+
+    // Append current thread name if so configured
+    if (BukkitPluginLoggerAdapter.CONFIG_SHOW_THREAD_NAME) {
+      buf.append('[');
+      buf.append(Thread.currentThread().getName());
+      buf.append("] ");
+    }
+
+    // Append the name of the log instance if so configured
+    if (BukkitPluginLoggerAdapter.CONFIG_SHOW_SHORT_LOG_NAME) {
+      if (this.shortLogName == null) {
+        this.shortLogName = this.name.substring(this.name.lastIndexOf(".") + 1);
+      }
+      buf.append(String.valueOf(this.shortLogName)).append(" - ");
+    } else if (BukkitPluginLoggerAdapter.CONFIG_SHOW_LOG_NAME) {
+      buf.append(String.valueOf(this.name)).append(" - ");
+    }
+
+    // Append the message
+    buf.append(message);
+
+    // Log to Bukkit
+    this.bukkitLog(BukkitPluginLoggerAdapter.SELF,
+                   this.slf4jLevelIntToBukkitJULLevel(level), buf.toString(), t);
+
+  }
+
+  /*
+   * JDK14LoggerAdapter functionality
+   */
+
+  private String recursivelyComputeLevelString() {
+    String tempName = this.name;
+    String levelString = null;
+    int indexOfLastDot = tempName.length();
+    while ((levelString == null) && (indexOfLastDot > -1)) {
+      tempName = tempName.substring(0, indexOfLastDot);
+      levelString = BukkitPluginLoggerAdapter.getStringProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_PREFIX_LOG
+                                                                    + tempName,
+                                                                null);
+      indexOfLastDot = String.valueOf(tempName).lastIndexOf(".");
+    }
+    return levelString;
+  }
+
+  private Level slf4jLevelIntToBukkitJULLevel(final int slf4jLevelInt) {
     Level julLevel;
     switch (slf4jLevelInt) {
-      case LocationAwareLogger.TRACE_INT:
-        julLevel = Level.FINEST;
-        break;
-      case LocationAwareLogger.DEBUG_INT:
-        julLevel = Level.FINE;
-        break;
-      case LocationAwareLogger.INFO_INT:
+    // In Bukkit, Only the SEVERE, WARNING and INFO JUL levels are enabled, so
+    // SLF4J's TRACE and DEBUG levels must be logged at Bukkit's INFO level.
+      case BukkitPluginLoggerAdapter.LOG_LEVEL_TRACE:
+      case BukkitPluginLoggerAdapter.LOG_LEVEL_DEBUG:
+      case BukkitPluginLoggerAdapter.LOG_LEVEL_INFO:
         julLevel = Level.INFO;
         break;
-      case LocationAwareLogger.WARN_INT:
+      case BukkitPluginLoggerAdapter.LOG_LEVEL_WARN:
         julLevel = Level.WARNING;
         break;
-      case LocationAwareLogger.ERROR_INT:
+      case BukkitPluginLoggerAdapter.LOG_LEVEL_ERROR:
         julLevel = Level.SEVERE;
         break;
       default:
@@ -769,4 +738,5 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase
     }
     return julLevel;
   }
+
 }

@@ -44,72 +44,42 @@
  */
 package org.slf4j.impl;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
-import org.yaml.snakeyaml.Yaml;
+
+import com.avaje.ebeaninternal.server.transaction.log.SimpleLogger;
 
 /**
- * BukkitPluginLoggerFactory is an implementation of {@link ILoggerFactory}
- * returning the appropriately named {@link BukkitPluginLoggerAdapter} instance.
+ * An implementation of {@link ILoggerFactory} which always returns
+ * {@link SimpleLogger} instances.
  *
  * @author Ceki G&uuml;lc&uuml;
+ * @author Ronald Jack Jenkins Jr.
  */
 public class BukkitPluginLoggerFactory implements ILoggerFactory {
 
-  // key: name (String), value: a BukkitPluginLoggerAdapter;
   ConcurrentMap<String, Logger> loggerMap;
-  // The name of the Bukkit plugin to which this factory belongs.
-  private final String          pluginName;
 
   public BukkitPluginLoggerFactory() {
     this.loggerMap = new ConcurrentHashMap<String, Logger>();
+    BukkitPluginLoggerAdapter.init();
     // ensure jul initialization. see also SLF4J-359
     java.util.logging.LogManager.getLogManager();
-    // Get plugin name
-    InputStream pluginYmlFile = null;
-    try {
-      pluginYmlFile = this.getClass().getClassLoader()
-                          .getResource("plugin.yml").openStream();
-      final Yaml yaml = new Yaml();
-      @SuppressWarnings("rawtypes")
-      final Map pluginYml = (Map) yaml.load(pluginYmlFile);
-      this.pluginName = (String) pluginYml.get("name");
-    } catch (final IOException e) {
-      throw new IllegalStateException(e);
-    } finally {
-      if (pluginYmlFile != null) {
-        try {
-          pluginYmlFile.close();
-        } catch (final IOException e) {
-          e.printStackTrace();
-        }
-      }
-    }
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see org.slf4j.ILoggerFactory#getLogger(java.lang.String)
+  /**
+   * Return an appropriate {@link BukkitPluginLoggerAdapter} instance by name.
    */
   @Override
-  public Logger getLogger(String name) {
-    // the root logger is called "" in JUL
-    if (name.equalsIgnoreCase(Logger.ROOT_LOGGER_NAME)) {
-      name = "";
-    }
-
-    final Logger slf4jLogger = this.loggerMap.get(name);
-    if (slf4jLogger != null) {
-      return slf4jLogger;
+  public Logger getLogger(final String name) {
+    final Logger bukkitLogger = this.loggerMap.get(name);
+    if (bukkitLogger != null) {
+      return bukkitLogger;
     } else {
-      final Logger newInstance = new BukkitPluginLoggerAdapter(this.pluginName);
+      final Logger newInstance = new BukkitPluginLoggerAdapter(name);
       final Logger oldInstance = this.loggerMap.putIfAbsent(name, newInstance);
       return oldInstance == null ? newInstance : oldInstance;
     }

@@ -263,6 +263,10 @@
           <value>true</value>
         </property>
       </activation>
+      <!-- TODO: uncomment once we reach 1.0.0 -->
+      <!--properties>
+        <site.profile>production</site.profile>
+      </properties-->
       <build>
         <defaultGoal>clean deploy site-deploy</defaultGoal>
         <plugins>

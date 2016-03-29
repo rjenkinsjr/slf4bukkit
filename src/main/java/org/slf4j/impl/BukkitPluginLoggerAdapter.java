@@ -56,7 +56,6 @@ import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
-import org.slf4j.Marker;
 import org.slf4j.helpers.FormattingTuple;
 import org.slf4j.helpers.MarkerIgnoringBase;
 import org.slf4j.helpers.MessageFormatter;
@@ -162,9 +161,7 @@ import org.yaml.snakeyaml.Yaml;
  * @author Peter Royal
  * @author Ronald Jack Jenkins Jr.
  */
-public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase
-                                                                       implements
-                                                                       LocationAwareLogger {
+public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
 
   // Plugin reference.
   private static transient Plugin BUKKIT_PLUGIN;
@@ -501,17 +498,6 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase
   @Override
   public boolean isWarnEnabled() {
     return this.isLevelEnabled(BukkitPluginLoggerAdapter.LOG_LEVEL_WARN);
-  }
-
-  /**
-   * Location-aware logging capability. The marker and argArray are ignored.
-   */
-  @Override
-  public void log(final Marker marker, final String callerFQCN,
-                  final int level, final String message,
-                  final Object[] argArray, final Throwable t) {
-    if (!this.isLevelEnabled(level)) { return; }
-    this.log(callerFQCN, level, message, t);
   }
 
   /**

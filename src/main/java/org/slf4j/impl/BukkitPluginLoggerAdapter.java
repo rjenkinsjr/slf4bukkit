@@ -50,16 +50,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
+import org.slf4j.event.Level;
 import org.slf4j.helpers.FormattingTuple;
 import org.slf4j.helpers.MarkerIgnoringBase;
 import org.slf4j.helpers.MessageFormatter;
-import org.slf4j.spi.LocationAwareLogger;
 import org.yaml.snakeyaml.Yaml;
 
 /**
@@ -118,17 +117,17 @@ import org.yaml.snakeyaml.Yaml;
  * <p>
  * Because SLF4Bukkit's configuration comes from the plugin configuration,
  * SLF4Bukkit supports configuration reloading. To achieve this, call
- * {@link #init()} with argument {@code true} after calling
+ * {@link #init(boolean)} with argument {@code true} after calling
  * {@link Plugin#reloadConfig()}.
  * </p>
- * 
+ *
  * <p>
  * It is possible for SLF4J loggers to be used before the plugin is registered
  * with Bukkit's plugin manager. SLF4Bukkit is considered to be
  * <i>uninitialized</i> as long as the plugin cannot be retrieved from Bukkit's
  * plugin manager. While in the uninitialized state, SLF4Bukkit:
  * </p>
- * 
+ *
  * <ul>
  * <li>uses {@link Bukkit#getLogger()} instead of {@link Plugin#getLogger()}.</li>
  * <li>uses the default configuration values (see above).</li>
@@ -138,7 +137,7 @@ import org.yaml.snakeyaml.Yaml;
  * {@link Plugin#getLogger()} and {@link Plugin#getConfig() the plugin YAML
  * configuration values} are used.</li>
  * </ul>
- * 
+ *
  * <p>
  * For this reason, it is strongly recommended that you not emit any log
  * messages via SLF4Bukkit until your plugin's {@link Plugin#onLoad() onLoad()}
@@ -170,7 +169,6 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
   private static final String     CLASS_SELF                          = BukkitPluginLoggerAdapter.class.getName();
   private static final String     CLASS_SUPER                         = MarkerIgnoringBase.class.getName();
   // Configuration parameters.
-  private static int              CONFIG_DEFAULT_LOG_LEVEL;
   private static final String     CONFIG_FALLBACK_DEFAULT_LOG_LEVEL   = "info";
   private static final boolean    CONFIG_FALLBACK_SHOW_HEADER         = false;
   private static final boolean    CONFIG_FALLBACK_SHOW_LOG_NAME       = false;
@@ -182,35 +180,22 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
   private static final String     CONFIG_KEY_SHOW_LOG_NAME            = "slf4j.showLogName";
   private static final String     CONFIG_KEY_SHOW_SHORT_LOG_NAME      = "slf4j.showShortLogName";
   private static final String     CONFIG_KEY_SHOW_THREAD_NAME         = "slf4j.showThreadName";
-  private static boolean          CONFIG_SHOW_HEADER;
-  private static boolean          CONFIG_SHOW_LOG_NAME;
-  private static boolean          CONFIG_SHOW_SHORT_LOG_NAME;
-  private static boolean          CONFIG_SHOW_THREAD_NAME;
+  private static Level            CONFIG_VALUE_DEFAULT_LOG_LEVEL;
+  private static boolean          CONFIG_VALUE_SHOW_HEADER;
+  private static boolean          CONFIG_VALUE_SHOW_LOG_NAME;
+  private static boolean          CONFIG_VALUE_SHOW_SHORT_LOG_NAME;
+  private static boolean          CONFIG_VALUE_SHOW_THREAD_NAME;
   // Initialization lock.
   private static final Object     INITIALIZATION_LOCK                 = new Object();
-  // Logging level constants.
-  private static final int        LOG_LEVEL_DEBUG                     = LocationAwareLogger.DEBUG_INT;
-  private static final int        LOG_LEVEL_ERROR                     = LocationAwareLogger.ERROR_INT;
-  private static final int        LOG_LEVEL_INFO                      = LocationAwareLogger.INFO_INT;
-  private static final int        LOG_LEVEL_TRACE                     = LocationAwareLogger.TRACE_INT;
-  private static final int        LOG_LEVEL_WARN                      = LocationAwareLogger.WARN_INT;
   // serialVersionUID
   private static final long       serialVersionUID                    = -2270127287235697381L;
-  /** The current log level */
-  protected int                   currentLogLevel                     = BukkitPluginLoggerAdapter.LOG_LEVEL_INFO;
-  /** The short name of this simple log instance */
+  // The short name of this simple log instance
   private transient String        shortLogName                        = null;
 
   // NOTE: BukkitPluginLoggerAdapter constructor should have only package access
   // so that only BukkitPluginLoggerFactory be able to create one.
   BukkitPluginLoggerAdapter(final String name) {
     this.name = name;
-    final String levelString = this.recursivelyComputeLevelString();
-    if (levelString != null) {
-      this.currentLogLevel = BukkitPluginLoggerAdapter.stringToLevel(levelString);
-    } else {
-      this.currentLogLevel = BukkitPluginLoggerAdapter.CONFIG_DEFAULT_LOG_LEVEL;
-    }
   }
 
   /**
@@ -226,10 +211,10 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
       // Do not re-initialize unless requested.
       if (reinitialize) {
         BukkitPluginLoggerAdapter.BUKKIT_PLUGIN = null;
-        BUKKIT_PLUGIN_NAME = null;
+        BukkitPluginLoggerAdapter.BUKKIT_PLUGIN_NAME = null;
       } else if (BukkitPluginLoggerAdapter.BUKKIT_PLUGIN != null) { return; }
       // Get a reference to the plugin in this classloader.
-      if (BUKKIT_PLUGIN_NAME == null) {
+      if (BukkitPluginLoggerAdapter.BUKKIT_PLUGIN_NAME == null) {
         InputStream pluginYmlFile = null;
         try {
           pluginYmlFile = BukkitPluginLoggerAdapter.class.getClassLoader()
@@ -238,7 +223,7 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
           final Yaml yaml = new Yaml();
           @SuppressWarnings("rawtypes")
           final Map pluginYml = (Map) yaml.load(pluginYmlFile);
-          BUKKIT_PLUGIN_NAME = (String) pluginYml.get("name");
+          BukkitPluginLoggerAdapter.BUKKIT_PLUGIN_NAME = (String) pluginYml.get("name");
         } catch (final IOException e) {
           throw new IllegalStateException(e);
         } finally {
@@ -256,22 +241,22 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
       // server logger will be used instead of the plugin logger, and all
       // default configuration options will be used.
       BukkitPluginLoggerAdapter.BUKKIT_PLUGIN = Bukkit.getPluginManager()
-                                                      .getPlugin(BUKKIT_PLUGIN_NAME);
+                                                      .getPlugin(BukkitPluginLoggerAdapter.BUKKIT_PLUGIN_NAME);
       // Get the configuration values.
       // 1. Look in the plugin's on-disk config.
       // 2. If the value is absent, use the plugin's built-in config.
       // 3. If the value is absent, use the default values hardcoded above.
       // (1 and 2 are handled by using the Bukkit API.)
-      BukkitPluginLoggerAdapter.CONFIG_DEFAULT_LOG_LEVEL = BukkitPluginLoggerAdapter.stringToLevel(BukkitPluginLoggerAdapter.getStringProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_DEFAULT_LOG_LEVEL,
-                                                                                                                                               BukkitPluginLoggerAdapter.CONFIG_FALLBACK_DEFAULT_LOG_LEVEL));
-      BukkitPluginLoggerAdapter.CONFIG_SHOW_HEADER = BukkitPluginLoggerAdapter.getBooleanProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_SHOW_HEADER,
-                                                                                                  BukkitPluginLoggerAdapter.CONFIG_FALLBACK_SHOW_HEADER);
-      BukkitPluginLoggerAdapter.CONFIG_SHOW_LOG_NAME = BukkitPluginLoggerAdapter.getBooleanProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_SHOW_LOG_NAME,
-                                                                                                    BukkitPluginLoggerAdapter.CONFIG_FALLBACK_SHOW_LOG_NAME);
-      BukkitPluginLoggerAdapter.CONFIG_SHOW_SHORT_LOG_NAME = BukkitPluginLoggerAdapter.getBooleanProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_SHOW_SHORT_LOG_NAME,
-                                                                                                          BukkitPluginLoggerAdapter.CONFIG_FALLBACK_SHOW_SHORT_LOG_NAME);
-      BukkitPluginLoggerAdapter.CONFIG_SHOW_THREAD_NAME = BukkitPluginLoggerAdapter.getBooleanProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_SHOW_THREAD_NAME,
-                                                                                                       BukkitPluginLoggerAdapter.CONFIG_FALLBACK_SHOW_THREAD_NAME);
+      BukkitPluginLoggerAdapter.CONFIG_VALUE_DEFAULT_LOG_LEVEL = BukkitPluginLoggerAdapter.stringToLevel(BukkitPluginLoggerAdapter.getStringProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_DEFAULT_LOG_LEVEL,
+                                                                                                                                                     BukkitPluginLoggerAdapter.CONFIG_FALLBACK_DEFAULT_LOG_LEVEL));
+      BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_HEADER = BukkitPluginLoggerAdapter.getBooleanProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_SHOW_HEADER,
+                                                                                                        BukkitPluginLoggerAdapter.CONFIG_FALLBACK_SHOW_HEADER);
+      BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_LOG_NAME = BukkitPluginLoggerAdapter.getBooleanProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_SHOW_LOG_NAME,
+                                                                                                          BukkitPluginLoggerAdapter.CONFIG_FALLBACK_SHOW_LOG_NAME);
+      BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_SHORT_LOG_NAME = BukkitPluginLoggerAdapter.getBooleanProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_SHOW_SHORT_LOG_NAME,
+                                                                                                                BukkitPluginLoggerAdapter.CONFIG_FALLBACK_SHOW_SHORT_LOG_NAME);
+      BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_THREAD_NAME = BukkitPluginLoggerAdapter.getBooleanProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_SHOW_THREAD_NAME,
+                                                                                                             BukkitPluginLoggerAdapter.CONFIG_FALLBACK_SHOW_THREAD_NAME);
     }
   }
 
@@ -308,23 +293,47 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
     }
   }
 
+  private static java.util.logging.Level
+      slf4jLevelIntToBukkitJULLevel(final Level slf4jLevel) {
+    java.util.logging.Level julLevel;
+    switch (slf4jLevel) {
+    // In Bukkit, Only the SEVERE, WARNING and INFO JUL levels are enabled, so
+    // SLF4J's TRACE and DEBUG levels must be logged at Bukkit's INFO level.
+      case TRACE:
+      case DEBUG:
+      case INFO:
+        julLevel = java.util.logging.Level.INFO;
+        break;
+      case WARN:
+        julLevel = java.util.logging.Level.WARNING;
+        break;
+      case ERROR:
+        julLevel = java.util.logging.Level.SEVERE;
+        break;
+      default:
+        throw new IllegalStateException("Level " + slf4jLevel
+                                        + " is not recognized.");
+    }
+    return julLevel;
+  }
+
   /*
    * Logger API implementations
    */
 
-  private static int stringToLevel(final String levelStr) {
+  private static Level stringToLevel(final String levelStr) {
     if ("trace".equalsIgnoreCase(levelStr)) {
-      return BukkitPluginLoggerAdapter.LOG_LEVEL_TRACE;
+      return Level.TRACE;
     } else if ("debug".equalsIgnoreCase(levelStr)) {
-      return BukkitPluginLoggerAdapter.LOG_LEVEL_DEBUG;
+      return Level.DEBUG;
     } else if ("info".equalsIgnoreCase(levelStr)) {
-      return BukkitPluginLoggerAdapter.LOG_LEVEL_INFO;
+      return Level.INFO;
     } else if ("warn".equalsIgnoreCase(levelStr)) {
-      return BukkitPluginLoggerAdapter.LOG_LEVEL_WARN;
+      return Level.WARN;
     } else if ("error".equalsIgnoreCase(levelStr)) {
-      return BukkitPluginLoggerAdapter.LOG_LEVEL_ERROR;
+      return Level.ERROR;
     } else {
-      return BukkitPluginLoggerAdapter.LOG_LEVEL_INFO;
+      return Level.INFO;
     }
   }
 
@@ -334,8 +343,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    */
   @Override
   public void debug(final String msg) {
-    this.log(BukkitPluginLoggerAdapter.CLASS_SELF,
-             BukkitPluginLoggerAdapter.LOG_LEVEL_DEBUG, msg, null);
+    if (!this.isDebugEnabled()) { return; }
+    this.log(BukkitPluginLoggerAdapter.CLASS_SELF, Level.DEBUG, msg, null);
   }
 
   /**
@@ -344,8 +353,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    */
   @Override
   public void debug(final String format, final Object param1) {
-    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_DEBUG, format,
-                      param1, null);
+    if (!this.isDebugEnabled()) { return; }
+    this.formatAndLog(Level.DEBUG, format, param1, null);
   }
 
   /**
@@ -354,8 +363,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    */
   @Override
   public void debug(final String format, final Object... argArray) {
-    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_DEBUG, format,
-                      argArray);
+    if (!this.isDebugEnabled()) { return; }
+    this.formatAndLog(Level.DEBUG, format, argArray);
   }
 
   /**
@@ -365,15 +374,15 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
   @Override
   public void debug(final String format, final Object param1,
                     final Object param2) {
-    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_DEBUG, format,
-                      param1, param2);
+    if (!this.isDebugEnabled()) { return; }
+    this.formatAndLog(Level.DEBUG, format, param1, param2);
   }
 
   /** Log a message of level DEBUG, including an exception. */
   @Override
   public void debug(final String msg, final Throwable t) {
-    this.log(BukkitPluginLoggerAdapter.CLASS_SELF,
-             BukkitPluginLoggerAdapter.LOG_LEVEL_DEBUG, msg, t);
+    if (!this.isDebugEnabled()) { return; }
+    this.log(BukkitPluginLoggerAdapter.CLASS_SELF, Level.DEBUG, msg, t);
   }
 
   /**
@@ -382,8 +391,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    */
   @Override
   public void error(final String msg) {
-    this.log(BukkitPluginLoggerAdapter.CLASS_SELF,
-             BukkitPluginLoggerAdapter.LOG_LEVEL_ERROR, msg, null);
+    if (!this.isErrorEnabled()) { return; }
+    this.log(BukkitPluginLoggerAdapter.CLASS_SELF, Level.ERROR, msg, null);
   }
 
   /**
@@ -392,8 +401,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    */
   @Override
   public void error(final String format, final Object arg) {
-    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_ERROR, format, arg,
-                      null);
+    if (!this.isErrorEnabled()) { return; }
+    this.formatAndLog(Level.ERROR, format, arg, null);
   }
 
   /**
@@ -402,8 +411,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    */
   @Override
   public void error(final String format, final Object... argArray) {
-    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_ERROR, format,
-                      argArray);
+    if (!this.isErrorEnabled()) { return; }
+    this.formatAndLog(Level.ERROR, format, argArray);
   }
 
   /**
@@ -412,15 +421,15 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    */
   @Override
   public void error(final String format, final Object arg1, final Object arg2) {
-    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_ERROR, format, arg1,
-                      arg2);
+    if (!this.isErrorEnabled()) { return; }
+    this.formatAndLog(Level.ERROR, format, arg1, arg2);
   }
 
   /** Log a message of level ERROR, including an exception. */
   @Override
   public void error(final String msg, final Throwable t) {
-    this.log(BukkitPluginLoggerAdapter.CLASS_SELF,
-             BukkitPluginLoggerAdapter.LOG_LEVEL_ERROR, msg, t);
+    if (!this.isErrorEnabled()) { return; }
+    this.log(BukkitPluginLoggerAdapter.CLASS_SELF, Level.ERROR, msg, t);
   }
 
   /**
@@ -429,8 +438,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    */
   @Override
   public void info(final String msg) {
-    this.log(BukkitPluginLoggerAdapter.CLASS_SELF,
-             BukkitPluginLoggerAdapter.LOG_LEVEL_INFO, msg, null);
+    if (!this.isInfoEnabled()) { return; }
+    this.log(BukkitPluginLoggerAdapter.CLASS_SELF, Level.INFO, msg, null);
   }
 
   /**
@@ -439,8 +448,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    */
   @Override
   public void info(final String format, final Object arg) {
-    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_INFO, format, arg,
-                      null);
+    if (!this.isInfoEnabled()) { return; }
+    this.formatAndLog(Level.INFO, format, arg, null);
   }
 
   /**
@@ -449,8 +458,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    */
   @Override
   public void info(final String format, final Object... argArray) {
-    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_INFO, format,
-                      argArray);
+    if (!this.isInfoEnabled()) { return; }
+    this.formatAndLog(Level.INFO, format, argArray);
   }
 
   /**
@@ -459,45 +468,45 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    */
   @Override
   public void info(final String format, final Object arg1, final Object arg2) {
-    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_INFO, format, arg1,
-                      arg2);
+    if (!this.isInfoEnabled()) { return; }
+    this.formatAndLog(Level.INFO, format, arg1, arg2);
   }
 
   /** Log a message of level INFO, including an exception. */
   @Override
   public void info(final String msg, final Throwable t) {
-    this.log(BukkitPluginLoggerAdapter.CLASS_SELF,
-             BukkitPluginLoggerAdapter.LOG_LEVEL_INFO, msg, t);
+    if (!this.isInfoEnabled()) { return; }
+    this.log(BukkitPluginLoggerAdapter.CLASS_SELF, Level.INFO, msg, t);
   }
 
   /** Are {@code debug} messages currently enabled? */
   @Override
   public boolean isDebugEnabled() {
-    return this.isLevelEnabled(BukkitPluginLoggerAdapter.LOG_LEVEL_DEBUG);
+    return this.isLevelEnabled(Level.DEBUG);
   }
 
   /** Are {@code error} messages currently enabled? */
   @Override
   public boolean isErrorEnabled() {
-    return this.isLevelEnabled(BukkitPluginLoggerAdapter.LOG_LEVEL_ERROR);
+    return this.isLevelEnabled(Level.ERROR);
   }
 
   /** Are {@code info} messages currently enabled? */
   @Override
   public boolean isInfoEnabled() {
-    return this.isLevelEnabled(BukkitPluginLoggerAdapter.LOG_LEVEL_INFO);
+    return this.isLevelEnabled(Level.INFO);
   }
 
   /** Are {@code trace} messages currently enabled? */
   @Override
   public boolean isTraceEnabled() {
-    return this.isLevelEnabled(BukkitPluginLoggerAdapter.LOG_LEVEL_TRACE);
+    return this.isLevelEnabled(Level.TRACE);
   }
 
   /** Are {@code warn} messages currently enabled? */
   @Override
   public boolean isWarnEnabled() {
-    return this.isLevelEnabled(BukkitPluginLoggerAdapter.LOG_LEVEL_WARN);
+    return this.isLevelEnabled(Level.WARN);
   }
 
   /**
@@ -506,8 +515,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    */
   @Override
   public void trace(final String msg) {
-    this.log(BukkitPluginLoggerAdapter.CLASS_SELF,
-             BukkitPluginLoggerAdapter.LOG_LEVEL_TRACE, msg, null);
+    if (!this.isTraceEnabled()) { return; }
+    this.log(BukkitPluginLoggerAdapter.CLASS_SELF, Level.TRACE, msg, null);
   }
 
   /**
@@ -516,8 +525,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    */
   @Override
   public void trace(final String format, final Object param1) {
-    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_TRACE, format,
-                      param1, null);
+    if (!this.isTraceEnabled()) { return; }
+    this.formatAndLog(Level.TRACE, format, param1, null);
   }
 
   /**
@@ -526,8 +535,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    */
   @Override
   public void trace(final String format, final Object... argArray) {
-    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_TRACE, format,
-                      argArray);
+    if (!this.isTraceEnabled()) { return; }
+    this.formatAndLog(Level.TRACE, format, argArray);
   }
 
   /**
@@ -537,15 +546,15 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
   @Override
   public void trace(final String format, final Object param1,
                     final Object param2) {
-    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_TRACE, format,
-                      param1, param2);
+    if (!this.isTraceEnabled()) { return; }
+    this.formatAndLog(Level.TRACE, format, param1, param2);
   }
 
   /** Log a message of level TRACE, including an exception. */
   @Override
   public void trace(final String msg, final Throwable t) {
-    this.log(BukkitPluginLoggerAdapter.CLASS_SELF,
-             BukkitPluginLoggerAdapter.LOG_LEVEL_TRACE, msg, t);
+    if (!this.isTraceEnabled()) { return; }
+    this.log(BukkitPluginLoggerAdapter.CLASS_SELF, Level.TRACE, msg, t);
   }
 
   /**
@@ -554,8 +563,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    */
   @Override
   public void warn(final String msg) {
-    this.log(BukkitPluginLoggerAdapter.CLASS_SELF,
-             BukkitPluginLoggerAdapter.LOG_LEVEL_WARN, msg, null);
+    if (!this.isWarnEnabled()) { return; }
+    this.log(BukkitPluginLoggerAdapter.CLASS_SELF, Level.WARN, msg, null);
   }
 
   /**
@@ -564,8 +573,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    */
   @Override
   public void warn(final String format, final Object arg) {
-    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_WARN, format, arg,
-                      null);
+    if (!this.isWarnEnabled()) { return; }
+    this.formatAndLog(Level.WARN, format, arg, null);
   }
 
   /**
@@ -574,8 +583,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    */
   @Override
   public void warn(final String format, final Object... argArray) {
-    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_WARN, format,
-                      argArray);
+    if (!this.isWarnEnabled()) { return; }
+    this.formatAndLog(Level.WARN, format, argArray);
   }
 
   /**
@@ -584,8 +593,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    */
   @Override
   public void warn(final String format, final Object arg1, final Object arg2) {
-    this.formatAndLog(BukkitPluginLoggerAdapter.LOG_LEVEL_WARN, format, arg1,
-                      arg2);
+    if (!this.isWarnEnabled()) { return; }
+    this.formatAndLog(Level.WARN, format, arg1, arg2);
   }
 
   /*
@@ -595,8 +604,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
   /** Log a message of level WARN, including an exception. */
   @Override
   public void warn(final String msg, final Throwable t) {
-    this.log(BukkitPluginLoggerAdapter.CLASS_SELF,
-             BukkitPluginLoggerAdapter.LOG_LEVEL_WARN, msg, t);
+    if (!this.isWarnEnabled()) { return; }
+    this.log(BukkitPluginLoggerAdapter.CLASS_SELF, Level.WARN, msg, t);
   }
 
   private String computeShortName() {
@@ -613,6 +622,15 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
     return shortName.toString();
   }
 
+  private Level determineCurrentLevel() {
+    final String levelString = this.recursivelyComputeLevelString();
+    if (levelString != null) {
+      return BukkitPluginLoggerAdapter.stringToLevel(levelString);
+    } else {
+      return BukkitPluginLoggerAdapter.CONFIG_VALUE_DEFAULT_LOG_LEVEL;
+    }
+  }
+
   /**
    * For formatted messages, first substitute arguments and then log.
    *
@@ -621,9 +639,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    * @param arguments
    *          a list of 3 ore more arguments
    */
-  private void formatAndLog(final int level, final String format,
+  private void formatAndLog(final Level level, final String format,
                             final Object... arguments) {
-    BukkitPluginLoggerAdapter.init(false);
     if (!this.isLevelEnabled(level)) { return; }
     final FormattingTuple tp = MessageFormatter.arrayFormat(format, arguments);
     this.log(BukkitPluginLoggerAdapter.CLASS_SELF, level, tp.getMessage(),
@@ -638,9 +655,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    * @param arg1
    * @param arg2
    */
-  private void formatAndLog(final int level, final String format,
+  private void formatAndLog(final Level level, final String format,
                             final Object arg1, final Object arg2) {
-    BukkitPluginLoggerAdapter.init(false);
     if (!this.isLevelEnabled(level)) { return; }
     final FormattingTuple tp = MessageFormatter.format(format, arg1, arg2);
     this.log(BukkitPluginLoggerAdapter.CLASS_SELF, level, tp.getMessage(),
@@ -653,15 +669,20 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    * @param logLevel
    *          is this level enabled?
    */
-  private boolean isLevelEnabled(final int logLevel) {
+  private boolean isLevelEnabled(final Level logLevel) {
+    // Ensure that SLF4Bukkit is initialized. Every public API call passes
+    // through this method, so this is the appropriate place to ensure
+    // initialization.
+    BukkitPluginLoggerAdapter.init(false);
     // log level are numerically ordered so can use simple numeric comparison
     //
     // the PLUGIN.getLogger().isLoggable() check avoids the unconditional
     // construction of location data for disabled log statements. As of
     // 2008-07-31, callers of this method do not perform this check. See also
     // http://jira.qos.ch/browse/SLF4J-81
-    return (logLevel >= this.currentLogLevel)
-           && (BukkitPluginLoggerAdapter.getBukkitLogger().isLoggable(this.slf4jLevelIntToBukkitJULLevel(logLevel)));
+    final Level currentLogLevel = this.determineCurrentLevel();
+    return (logLevel.toInt() >= currentLogLevel.toInt())
+           && (BukkitPluginLoggerAdapter.getBukkitLogger().isLoggable(BukkitPluginLoggerAdapter.slf4jLevelIntToBukkitJULLevel(logLevel)));
   }
 
   /**
@@ -715,7 +736,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    * @param t
    */
   private void julLog(final Logger logger, final String callerFQCN,
-                      final Level level, final String msg, final Throwable t) {
+                      final java.util.logging.Level level, final String msg,
+                      final Throwable t) {
     // millis and thread are filled by the constructor
     final LogRecord record = new LogRecord(level, msg);
     record.setLoggerName(this.getName());
@@ -739,12 +761,11 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    * @param t
    *          The exception whose stack trace should be logged
    */
-  private void log(final String callerFQCN, final int level,
+  private void log(final String callerFQCN, final Level level,
                    final String message, final Throwable t) {
     final Logger logger;
     synchronized (BukkitPluginLoggerAdapter.INITIALIZATION_LOCK) {
       // Ensure that the logger will accept this request.
-      BukkitPluginLoggerAdapter.init(false);
       if (!this.isLevelEnabled(level)) { return; }
       // Determine which logger will be used.
       logger = BukkitPluginLoggerAdapter.getBukkitLogger();
@@ -754,23 +775,25 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
     final StringBuilder buf = new StringBuilder(32);
 
     // Indicate that this message comes from SLF4J
-    if (BukkitPluginLoggerAdapter.CONFIG_SHOW_HEADER) {
+    if (BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_HEADER) {
       buf.append("SLF4J");
     }
 
     // Print a readable representation of the log level (but only for log levels
     // that Bukkit would otherwise eat)
     switch (level) {
-      case LOG_LEVEL_TRACE:
+      case TRACE:
         buf.append("[TRACE]");
         break;
-      case LOG_LEVEL_DEBUG:
+      case DEBUG:
         buf.append("[DEBUG]");
+        break;
+      default:
         break;
     }
 
     // Append current thread name if so configured
-    if (BukkitPluginLoggerAdapter.CONFIG_SHOW_THREAD_NAME) {
+    if (BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_THREAD_NAME) {
       buf.append('[');
       buf.append(Thread.currentThread().getName());
       buf.append("]");
@@ -782,12 +805,12 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
     }
 
     // Append the name of the log instance if so configured
-    if (BukkitPluginLoggerAdapter.CONFIG_SHOW_SHORT_LOG_NAME) {
+    if (BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_SHORT_LOG_NAME) {
       if (this.shortLogName == null) {
         this.shortLogName = this.computeShortName();
       }
       buf.append(String.valueOf(this.shortLogName)).append(" - ");
-    } else if (BukkitPluginLoggerAdapter.CONFIG_SHOW_LOG_NAME) {
+    } else if (BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_LOG_NAME) {
       buf.append(String.valueOf(this.name)).append(" - ");
     }
 
@@ -796,7 +819,8 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
 
     // Log to Bukkit
     this.julLog(logger, BukkitPluginLoggerAdapter.CLASS_SELF,
-                this.slf4jLevelIntToBukkitJULLevel(level), buf.toString(), t);
+                BukkitPluginLoggerAdapter.slf4jLevelIntToBukkitJULLevel(level),
+                buf.toString(), t);
   }
 
   private String recursivelyComputeLevelString() {
@@ -811,29 +835,6 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
       indexOfLastDot = String.valueOf(tempName).lastIndexOf(".");
     }
     return levelString;
-  }
-
-  private Level slf4jLevelIntToBukkitJULLevel(final int slf4jLevelInt) {
-    Level julLevel;
-    switch (slf4jLevelInt) {
-    // In Bukkit, Only the SEVERE, WARNING and INFO JUL levels are enabled, so
-    // SLF4J's TRACE and DEBUG levels must be logged at Bukkit's INFO level.
-      case BukkitPluginLoggerAdapter.LOG_LEVEL_TRACE:
-      case BukkitPluginLoggerAdapter.LOG_LEVEL_DEBUG:
-      case BukkitPluginLoggerAdapter.LOG_LEVEL_INFO:
-        julLevel = Level.INFO;
-        break;
-      case BukkitPluginLoggerAdapter.LOG_LEVEL_WARN:
-        julLevel = Level.WARNING;
-        break;
-      case BukkitPluginLoggerAdapter.LOG_LEVEL_ERROR:
-        julLevel = Level.SEVERE;
-        break;
-      default:
-        throw new IllegalStateException("Level number " + slf4jLevelInt
-                                        + " is not recognized.");
-    }
-    return julLevel;
   }
 
 }

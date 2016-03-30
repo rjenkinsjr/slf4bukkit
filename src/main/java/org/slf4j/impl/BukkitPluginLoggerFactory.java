@@ -50,11 +50,9 @@ import java.util.concurrent.ConcurrentMap;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 
-import com.avaje.ebeaninternal.server.transaction.log.SimpleLogger;
-
 /**
  * An implementation of {@link ILoggerFactory} which always returns
- * {@link SimpleLogger} instances.
+ * {@link BukkitPluginLoggerAdapter} instances.
  *
  * @author Ceki G&uuml;lc&uuml;
  * @author Ronald Jack Jenkins Jr.

@@ -24,6 +24,7 @@ If you were linked here by documentation for a plugin that you're using on your 
 ### Plugin Developers
 If you wish to use [SLF4J](http://slf4j.org) in your Bukkit plugin, or if your plugin has a dependency on a library that uses SLF4J:
 
++ Reference the [rjenkinsjr Maven2 Repository](https://github.com/rjenkinsjr/maven2) in your POM.
 + [Shade](https://maven.apache.org/plugins/maven-shade-plugin/usage.html) SLF4Bukkit into your plugin project:
 
 ```xml

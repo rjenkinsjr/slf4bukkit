@@ -394,6 +394,9 @@
                   <includes>
                     <include>**/*</include>
                   </includes>
+                  <excludes>
+                    <exclude>**/maven-metadata.xml*</exclude>
+                  </excludes>
                   <merge>true</merge>
                   <noJekyll>true</noJekyll>
                 </configuration>

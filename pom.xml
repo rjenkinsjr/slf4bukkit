@@ -389,8 +389,7 @@
                   <repositoryName>maven2-test</repositoryName>
                   <repositoryOwner>rjenkinsjr</repositoryOwner>
                   <branch>refs/heads/master</branch>
-                  <message>Publishing artifacts for
-                    ${project.groupId}:${project.artifactId}:${project.version}</message>
+                  <message>${project.groupId}:${project.artifactId}:${project.version}</message>
                   <outputDirectory>${maven2.repo.dir}</outputDirectory>
                   <includes>
                     <include>**/*</include>

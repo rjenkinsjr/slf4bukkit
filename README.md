@@ -30,11 +30,9 @@ If you wish to use [SLF4J](http://slf4j.org) in your Bukkit plugin, or if your p
 <dependency>
   <groupId>info.ronjenkins</groupId>
   <artifactId>slf4bukkit</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.1.0</version>
 </dependency>
 ```
 
-+ (Optional) Add your desired default configuration values to your plugin's built-in [config.yml](http://rjenkinsjr.github.io/slf4bukkit) file.
++ (Optional) Add your desired default configuration values to your plugin's built-in [config.yml](http://rjenkinsjr.github.io/slf4bukkit) file. For more details, see the Javadocs for the [BukkitPluginLoggerAdapter](http://rjenkinsjr.github.io/slf4bukkit/apidocs/org/slf4j/impl/BukkitPluginLoggerAdapter.html) class.
 + (Optional) Use the [SLF4J API](http://www.slf4j.org/api/org/slf4j/Logger.html) in your code. Note that SLF4Bukkit does not support markers.
-
-For more details, see the Javadocs for the [BukkitPluginLoggerAdapter](http://rjenkinsjr.github.io/slf4bukkit/apidocs/org/slf4j/impl/BukkitPluginLoggerAdapter.html) class.

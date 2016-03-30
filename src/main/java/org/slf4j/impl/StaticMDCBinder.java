@@ -58,7 +58,7 @@ public class StaticMDCBinder {
   /**
    * Currently this method always returns an instance of {@link BasicMDCAdapter}
    * .
-   * 
+   *
    * @return never null.
    */
   public MDCAdapter getMDCA() {

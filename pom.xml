@@ -386,9 +386,9 @@
                 </goals>
                 <configuration>
                   <server>github</server><!-- settings.xml -->
-                  <repositoryName>maven2-test</repositoryName>
+                  <repositoryName>maven2</repositoryName>
                   <repositoryOwner>rjenkinsjr</repositoryOwner>
-                  <branch>refs/heads/master</branch>
+                  <branch>refs/heads/repo</branch>
                   <message>${project.groupId}:${project.artifactId}:${project.version}</message>
                   <outputDirectory>${maven2.repo.dir}</outputDirectory>
                   <includes>

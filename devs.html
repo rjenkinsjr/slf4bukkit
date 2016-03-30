@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="Date-Revision-yyyymmdd" content="20160329" />
     <meta http-equiv="Content-Language" content="en" />
-    <title>SLF4Bukkit &#x2013; SLF4Bukkit for Server Administrators</title>
+    <title>SLF4Bukkit &#x2013; SLF4Bukkit for Plugin Developers</title>
     <link rel="stylesheet" href="./css/apache-maven-fluido-1.4.min.css" />
     <link rel="stylesheet" href="./css/site.css" />
     <link rel="stylesheet" href="./css/print.css" media="print" />
@@ -143,17 +143,17 @@
                 <ul class="nav nav-list">
                     <li class="nav-header">User Guide</li>
                               
-      <li class="active">
-  
-            <a href="#"><span class="none"></span>For Server Administrators</a>
-          </li>
-                
       <li>
   
-                          <a href="devs.html" title="For Plugin Developers">
+                          <a href="index.html" title="For Server Administrators">
           <span class="none"></span>
-        For Plugin Developers</a>
+        For Server Administrators</a>
             </li>
+                
+      <li class="active">
+  
+            <a href="#"><span class="none"></span>For Plugin Developers</a>
+          </li>
                               <li class="nav-header">Project Documentation</li>
                                                                                                                                                                           
       <li>
@@ -191,61 +191,28 @@
         <div id="bodyColumn"  class="span10" >
                                   
             <div class="section">
-<h2><a name="SLF4Bukkit_for_Server_Administrators"></a>SLF4Bukkit for Server Administrators</h2>
-<p>If you were linked here by documentation for a plugin that you&#x2019;re using on your Bukkit/Spigot server, you can control the logging behavior of the plugin using its <tt>config.yml</tt> file.</p>
-<p>Basic documentation of all available options is shown below. Your plugin likely has additional information regarding what portions of the plugin&#x2019;s logging facilities are configurable.</p>
+<h2><a name="SLF4Bukkit_for_Plugin_Developers"></a>SLF4Bukkit for Plugin Developers</h2>
+<p>If you wish to use <a class="externalLink" href="http://slf4j.org">SLF4J</a> in your Bukkit plugin, or if your plugin has a dependency on a library that uses SLF4J:</p>
+
+<ul>
+  
+<li><a class="externalLink" href="https://maven.apache.org/plugins/maven-shade-plugin/usage.html">Shade</a> SLF4Bukkit into your plugin project:</li>
+</ul>
 
 <div class="source">
-<div class="source"><pre class="prettyprint linenums"># This is the section within which all SLF4Bukkit configuration options is
-# contained. Its name is the same regardless of what the plugin's name is.
-slf4j:
+<div class="source"><pre class="prettyprint linenums">&lt;dependency&gt;
+  &lt;groupId&gt;info.ronjenkins&lt;/groupId&gt;
+  &lt;artifactId&gt;slf4bukkit&lt;/artifactId&gt;
+  &lt;version&gt;0.1.0&lt;/version&gt;
+&lt;/dependency&gt;
+</pre></div></div>
 
-  # Default log level for all plugin logging activity. Possible values are
-  # &quot;trace&quot;, &quot;debug&quot;, &quot;info&quot;, &quot;warn&quot;, or &quot;error&quot;.
-  #
-  # If the plugin logs any &quot;trace&quot; or &quot;debug&quot; messages, they will be logged by
-  # the plugin as &quot;info&quot; severity, but you'll see the actual severity in the
-  # log message. This is due to a Bukkit logging limitation.
-  #
-  # If not specified, default is &quot;info&quot;.
-  defaultLogLevel: info
+<ul>
   
-  # Shows an &quot;[SLF4J]&quot; header for every message logged through SLF4Bukkit.
-  #
-  # If not specified, default is &quot;false&quot;.
-  showHeader: false
+<li>(Optional) Add your desired default configuration values to your plugin&#x2019;s built-in <a href="home.html">config.yml</a> file. For more details, see the Javadocs for the <a href="apidocs/org/slf4j/impl/BukkitPluginLoggerAdapter.html">BukkitPluginLoggerAdapter</a> class.</li>
   
-  # Shows the name of each thread that is logging via SLF4Bukkit. You probably
-  # don't want this information unless you're helping troubleshoot a plugin.
-  #
-  # If not specified, default is &quot;false&quot;.
-  showThreadName: false
-  
-  # Shows the full logger name (e.g. &quot;info.ronjenkins.bukkit.MyPlugin&quot;).
-  #
-  # If not specified, default is &quot;false&quot;.
-  showLogName: false
-  
-  # Shows the short logger name, which is the short Java package name format
-  # (e.g. a logger named &quot;info.ronjenkins.bukkit.MyPlugin&quot; would have a short
-  # name of &quot;i.r.b.MyPlugin&quot;.
-  #
-  # If not specified, default is &quot;true&quot;.
-  showShortLogName: true
-  
-  # This section controls logging levels for individual loggers.
-  log:
-  
-    # For each element in this section, the key is the full logger name and the
-    # value is the logging level for that logger. Possible logging levels are
-    # the same as what's available for the &quot;slf4j.defaultLogLevel&quot; property.
-    #
-    # The documentation for your plugin should elaborate on what logger names
-    # are available. As a general rule, you won't need to specify levels for
-    # specific loggers.
-    info.ronjenkins.bukkit.MyPlugin: debug
-    info.ronjenkins.SomeOtherLogger: warn
-</pre></div></div></div>
+<li>(Optional) Use the <a class="externalLink" href="http://www.slf4j.org/api/org/slf4j/Logger.html">SLF4J API</a> in your code. Note that SLF4Bukkit does not support markers.</li>
+</ul></div>
                   </div>
             </div>
           </div>

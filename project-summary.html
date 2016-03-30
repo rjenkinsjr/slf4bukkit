@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="Date-Revision-yyyymmdd" content="20160329" />
     <meta http-equiv="Content-Language" content="en" />
-    <title>SLF4Bukkit &#x2013; SLF4Bukkit for Server Administrators</title>
+    <title>SLF4Bukkit &#x2013; Project Summary</title>
     <link rel="stylesheet" href="./css/apache-maven-fluido-1.4.min.css" />
     <link rel="stylesheet" href="./css/site.css" />
     <link rel="stylesheet" href="./css/print.css" media="print" />
@@ -143,10 +143,12 @@
                 <ul class="nav nav-list">
                     <li class="nav-header">User Guide</li>
                               
-      <li class="active">
+      <li>
   
-            <a href="#"><span class="none"></span>For Server Administrators</a>
-          </li>
+                          <a href="index.html" title="For Server Administrators">
+          <span class="none"></span>
+        For Server Administrators</a>
+            </li>
                 
       <li>
   
@@ -155,13 +157,55 @@
         For Plugin Developers</a>
             </li>
                               <li class="nav-header">Project Documentation</li>
-                                                                                                                                                                          
+                                                                                                                                                                                    
       <li>
   
                           <a href="project-info.html" title="Project Information">
-          <span class="icon-chevron-right"></span>
+          <span class="icon-chevron-down"></span>
         Project Information</a>
-                  </li>
+                    <ul class="nav nav-list">
+                    
+      <li>
+  
+                          <a href="dependencies.html" title="Dependencies">
+          <span class="none"></span>
+        Dependencies</a>
+            </li>
+                    
+      <li>
+  
+                          <a href="dependency-convergence.html" title="Dependency Convergence">
+          <span class="none"></span>
+        Dependency Convergence</a>
+            </li>
+                    
+      <li>
+  
+                          <a href="plugins.html" title="Project Plugins">
+          <span class="none"></span>
+        Project Plugins</a>
+            </li>
+                    
+      <li>
+  
+                          <a href="source-repository.html" title="Source Repository">
+          <span class="none"></span>
+        Source Repository</a>
+            </li>
+                    
+      <li class="active">
+  
+            <a href="#"><span class="none"></span>Project Summary</a>
+          </li>
+                    
+      <li>
+  
+                          <a href="license.html" title="Project License">
+          <span class="none"></span>
+        Project License</a>
+            </li>
+              </ul>
+        </li>
                                                                                                       
       <li>
   
@@ -191,61 +235,46 @@
         <div id="bodyColumn"  class="span10" >
                                   
             <div class="section">
-<h2><a name="SLF4Bukkit_for_Server_Administrators"></a>SLF4Bukkit for Server Administrators</h2>
-<p>If you were linked here by documentation for a plugin that you&#x2019;re using on your Bukkit/Spigot server, you can control the logging behavior of the plugin using its <tt>config.yml</tt> file.</p>
-<p>Basic documentation of all available options is shown below. Your plugin likely has additional information regarding what portions of the plugin&#x2019;s logging facilities are configurable.</p>
-
-<div class="source">
-<div class="source"><pre class="prettyprint linenums"># This is the section within which all SLF4Bukkit configuration options is
-# contained. Its name is the same regardless of what the plugin's name is.
-slf4j:
-
-  # Default log level for all plugin logging activity. Possible values are
-  # &quot;trace&quot;, &quot;debug&quot;, &quot;info&quot;, &quot;warn&quot;, or &quot;error&quot;.
-  #
-  # If the plugin logs any &quot;trace&quot; or &quot;debug&quot; messages, they will be logged by
-  # the plugin as &quot;info&quot; severity, but you'll see the actual severity in the
-  # log message. This is due to a Bukkit logging limitation.
-  #
-  # If not specified, default is &quot;info&quot;.
-  defaultLogLevel: info
-  
-  # Shows an &quot;[SLF4J]&quot; header for every message logged through SLF4Bukkit.
-  #
-  # If not specified, default is &quot;false&quot;.
-  showHeader: false
-  
-  # Shows the name of each thread that is logging via SLF4Bukkit. You probably
-  # don't want this information unless you're helping troubleshoot a plugin.
-  #
-  # If not specified, default is &quot;false&quot;.
-  showThreadName: false
-  
-  # Shows the full logger name (e.g. &quot;info.ronjenkins.bukkit.MyPlugin&quot;).
-  #
-  # If not specified, default is &quot;false&quot;.
-  showLogName: false
-  
-  # Shows the short logger name, which is the short Java package name format
-  # (e.g. a logger named &quot;info.ronjenkins.bukkit.MyPlugin&quot; would have a short
-  # name of &quot;i.r.b.MyPlugin&quot;.
-  #
-  # If not specified, default is &quot;true&quot;.
-  showShortLogName: true
-  
-  # This section controls logging levels for individual loggers.
-  log:
-  
-    # For each element in this section, the key is the full logger name and the
-    # value is the logging level for that logger. Possible logging levels are
-    # the same as what's available for the &quot;slf4j.defaultLogLevel&quot; property.
-    #
-    # The documentation for your plugin should elaborate on what logger names
-    # are available. As a general rule, you won't need to specify levels for
-    # specific loggers.
-    info.ronjenkins.bukkit.MyPlugin: debug
-    info.ronjenkins.SomeOtherLogger: warn
-</pre></div></div></div>
+<h2><a name="Project_Summary"></a>Project Summary</h2><a name="Project_Summary"></a>
+<div class="section">
+<h3><a name="Project_Information"></a>Project Information</h3><a name="Project_Information"></a>
+<table border="0" class="table table-striped">
+<tr class="a">
+<th>Field</th>
+<th>Value</th></tr>
+<tr class="b">
+<td>Name</td>
+<td>SLF4Bukkit</td></tr>
+<tr class="a">
+<td>Description</td>
+<td>SLF4J binding that uses Bukkit's plugin logging system.</td></tr>
+<tr class="b">
+<td>Homepage</td>
+<td><a class="externalLink" href="http://rjenkinsjr.github.io/slf4bukkit">http://rjenkinsjr.github.io/slf4bukkit</a></td></tr></table></div>
+<div class="section">
+<h3><a name="Project_Organization"></a>Project Organization</h3><a name="Project_Organization"></a>
+<p>This project does not belong to an organization.</p></div>
+<div class="section">
+<h3><a name="Build_Information"></a>Build Information</h3><a name="Build_Information"></a>
+<table border="0" class="table table-striped">
+<tr class="a">
+<th>Field</th>
+<th>Value</th></tr>
+<tr class="b">
+<td>GroupId</td>
+<td>info.ronjenkins</td></tr>
+<tr class="a">
+<td>ArtifactId</td>
+<td>slf4bukkit</td></tr>
+<tr class="b">
+<td>Version</td>
+<td>0.1.0</td></tr>
+<tr class="a">
+<td>Type</td>
+<td>jar</td></tr>
+<tr class="b">
+<td>Java Version</td>
+<td>1.7</td></tr></table></div></div>
                   </div>
             </div>
           </div>

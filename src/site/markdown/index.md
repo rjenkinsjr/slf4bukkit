@@ -49,7 +49,7 @@ slf4j:
   # If not specified or given an invalid value, defaults to "false".
   showHeader: false
   
-  # Shows the name of each thread that is logging via SLF4Bukkit. You probably
+  # Shows the name of the logging thread, wrapped in brackets. You probably
   # don't want this information unless you're helping troubleshoot a plugin.
   #
   # If not specified or given an invalid value, defaults to "false".

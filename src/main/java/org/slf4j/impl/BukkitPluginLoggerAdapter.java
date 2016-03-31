@@ -94,8 +94,8 @@ import org.yaml.snakeyaml.Yaml;
  * defaults to <code>false</code>.</li>
  *
  * <li><code>slf4j.showThreadName</code> -Set to <code>true</code> if you want
- * to output the current thread name. If unspecified or given any other value,
- * defaults to <code>false</code>.</li>
+ * to output the current thread name, wrapped in brackets. If unspecified or
+ * given any other value, defaults to <code>false</code>.</li>
  *
  * <li><code>slf4j.showLogName</code> - Set to <code>true</code> if you want the
  * logger instance name (wrapped in curly braces) to be included in output

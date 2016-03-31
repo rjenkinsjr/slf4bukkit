@@ -17,8 +17,8 @@
 ${project.name}
 ===
 ${project.description}
----
-### Server Owners
+
+### Server Administrators
 If you were linked here by documentation for a plugin that you're using on your Bukkit/Spigot server, [go here](${project.url}) to learn what configuration options you have available (and please ask the plugin developer to fix their links!).
 
 ### Plugin Developers

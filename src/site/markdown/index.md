@@ -18,7 +18,11 @@
 #set($h4 = '####')
 #set($h5 = '#####')
 #set($h6 = '######')
-${project.name} for Server Administrators
+${project.name}
+===
+${project.description}
+
+For Server Administrators
 ---
 
 If you were linked here by documentation for a plugin that you're using on your Bukkit/Spigot server, you can control the logging behavior of the plugin using its `config.yml` file.

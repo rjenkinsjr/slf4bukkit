@@ -98,14 +98,18 @@ import org.yaml.snakeyaml.Yaml;
  * defaults to <code>false</code>.</li>
  *
  * <li><code>slf4j.showLogName</code> - Set to <code>true</code> if you want the
- * logger instance name to be included in output messages. If unspecified or
- * given any other value, defaults to <code>false</code>.</li>
+ * logger instance name (wrapped in curly braces) to be included in output
+ * messages. If unspecified or given any other value, defaults to
+ * <code>false</code>. If this option is <code>true</code>, it overrides
+ * <code>slf4j.showShortLogName</code>.</li>
  *
  * <li><code>slf4j.showShortLogName</code> - Set to <code>true</code> if you
- * want the logger instance's short name to be included in output messages. The
- * short name is equal to the full name with every dot-separated portion of the
- * full name (except the last portion) truncated to its first character. If
- * unspecified or given any other value, defaults to <code>true</code>.</li>
+ * want the logger instance's short name (wrapped in curly braces) to be
+ * included in output messages. The short name is equal to the full name with
+ * every dot-separated portion of the full name (except the last portion)
+ * truncated to its first character. If unspecified or given any other value,
+ * defaults to <code>true</code>. This option is ignored if
+ * <code>slf4j.showLogName</code> is <code>true</code>.</li>
  * </ul>
  *
  * <p>
@@ -810,13 +814,13 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
     }
 
     // Append the name of the log instance if so configured
-    if (BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_SHORT_LOG_NAME) {
+    if (BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_LOG_NAME) {
+      buf.append('{').append(this.name).append("} ");
+    } else if (BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_SHORT_LOG_NAME) {
       if (this.shortLogName == null) {
         this.shortLogName = this.computeShortName();
       }
-      buf.append(String.valueOf(this.shortLogName)).append(" - ");
-    } else if (BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_LOG_NAME) {
-      buf.append(String.valueOf(this.name)).append(" - ");
+      buf.append('{').append(this.shortLogName).append("} ");
     }
 
     // Append the message

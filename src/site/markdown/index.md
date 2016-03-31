@@ -55,16 +55,20 @@ slf4j:
   # If not specified or given an invalid value, defaults to "false".
   showThreadName: false
   
-  # Shows the full logger name (e.g. "info.ronjenkins.bukkit.MyPlugin").
+  # Shows the full logger name (e.g. "info.ronjenkins.bukkit.MyPlugin"),
+  # wrapped in curly braces.
   #
-  # If not specified or given an invalid value, defaults to "false".
+  # If not specified or given an invalid value, defaults to "false". If true,
+  # this overrides "slf4j.showShortLogName".
   showLogName: false
   
-  # Shows the short logger name, which is the short Java package name format
-  # (e.g. a logger named "info.ronjenkins.bukkit.MyPlugin" would have a short
-  # name of "i.r.b.MyPlugin".
+  # Shows the short logger name, wrapped in curly braces. The short logger name
+  # is the short Java package name format (e.g. a logger named
+  # "info.ronjenkins.bukkit.MyPlugin" would have a short name of
+  # "i.r.b.MyPlugin").
   #
-  # If not specified or given an invalid value, defaults to "true".
+  # If not specified or given an invalid value, defaults to "true". If
+  # "slf4j.showLogName" is true, this option is ignored.
   showShortLogName: true
   
   # This section controls logging levels for individual loggers.

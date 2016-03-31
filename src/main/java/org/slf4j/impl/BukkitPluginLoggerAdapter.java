@@ -79,31 +79,33 @@ import org.yaml.snakeyaml.Yaml;
  * <ul>
  * <li><code>slf4j.defaultLogLevel</code> - Default log level for all SLF4Bukkit
  * loggers in this plugin. Must be one of "trace", "debug", "info", "warn", or
- * "error". Defaults to "info".</li>
+ * "error". If unspecified or given any other value, defaults to "info".</li>
  *
  * <li><code>slf4j.log.<em>a.b.c</em></code> - Logging detail level for an
  * SLF4Bukkit logger instance in this plugin named "a.b.c". Right-side value
  * must be one of "trace", "debug", "info", "warn", or "error". When a logger
  * named "a.b.c" is initialized, its level is assigned from this property. If
- * unspecified, the level of the nearest parent logger will be used. If no
- * parent logger level is set, then the value specified by
+ * unspecified or given any other value, the level of the nearest parent logger
+ * will be used. If no parent logger level is set, then the value specified by
  * <code>slf4j.defaultLogLevel</code> for this plugin will be used.</li>
  *
  * <li><code>slf4j.showHeader</code> -Set to <code>true</code> if you want to
- * output the {@code [SLF4J]} header. Defaults to <code>false</code>.</li>
+ * output the {@code [SLF4J]} header. If unspecified or given any other value,
+ * defaults to <code>false</code>.</li>
  *
  * <li><code>slf4j.showThreadName</code> -Set to <code>true</code> if you want
- * to output the current thread name. Defaults to <code>false</code>.</li>
+ * to output the current thread name. If unspecified or given any other value,
+ * defaults to <code>false</code>.</li>
  *
  * <li><code>slf4j.showLogName</code> - Set to <code>true</code> if you want the
- * logger instance name to be included in output messages. Defaults to
- * <code>false</code>.</li>
+ * logger instance name to be included in output messages. If unspecified or
+ * given any other value, defaults to <code>false</code>.</li>
  *
  * <li><code>slf4j.showShortLogName</code> - Set to <code>true</code> if you
  * want the logger instance's short name to be included in output messages. The
  * short name is equal to the full name with every dot-separated portion of the
- * full name (except the last portion) truncated to its first character.
- * Defaults to <code>true</code>.</li>
+ * full name (except the last portion) truncated to its first character. If
+ * unspecified or given any other value, defaults to <code>true</code>.</li>
  * </ul>
  *
  * <p>
@@ -249,6 +251,7 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
       // (1 and 2 are handled by using the Bukkit API.)
       BukkitPluginLoggerAdapter.CONFIG_VALUE_DEFAULT_LOG_LEVEL = BukkitPluginLoggerAdapter.stringToLevel(BukkitPluginLoggerAdapter.getStringProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_DEFAULT_LOG_LEVEL,
                                                                                                                                                      BukkitPluginLoggerAdapter.CONFIG_FALLBACK_DEFAULT_LOG_LEVEL));
+      if (BukkitPluginLoggerAdapter.CONFIG_VALUE_DEFAULT_LOG_LEVEL == null) BukkitPluginLoggerAdapter.CONFIG_VALUE_DEFAULT_LOG_LEVEL = BukkitPluginLoggerAdapter.stringToLevel(BukkitPluginLoggerAdapter.CONFIG_FALLBACK_DEFAULT_LOG_LEVEL);
       BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_HEADER = BukkitPluginLoggerAdapter.getBooleanProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_SHOW_HEADER,
                                                                                                         BukkitPluginLoggerAdapter.CONFIG_FALLBACK_SHOW_HEADER);
       BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_LOG_NAME = BukkitPluginLoggerAdapter.getBooleanProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_SHOW_LOG_NAME,
@@ -266,7 +269,9 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
       if (BukkitPluginLoggerAdapter.BUKKIT_PLUGIN == null) { return defaultValue; }
       final String prop = BukkitPluginLoggerAdapter.BUKKIT_PLUGIN.getConfig()
                                                                  .getString(name);
-      return (prop == null) ? defaultValue : "true".equalsIgnoreCase(prop);
+      if ("true".equalsIgnoreCase(prop)) return true;
+      if ("false".equalsIgnoreCase(prop)) return false;
+      return defaultValue;
     }
   }
 
@@ -333,7 +338,7 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
     } else if ("error".equalsIgnoreCase(levelStr)) {
       return Level.ERROR;
     } else {
-      return Level.INFO;
+      return null;
     }
   }
 
@@ -623,9 +628,9 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
   }
 
   private Level determineCurrentLevel() {
-    final String levelString = this.recursivelyComputeLevelString();
-    if (levelString != null) {
-      return BukkitPluginLoggerAdapter.stringToLevel(levelString);
+    final Level level = this.recursivelyComputeLevel();
+    if (level != null) {
+      return level;
     } else {
       return BukkitPluginLoggerAdapter.CONFIG_VALUE_DEFAULT_LOG_LEVEL;
     }
@@ -823,18 +828,18 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
                 buf.toString(), t);
   }
 
-  private String recursivelyComputeLevelString() {
+  private Level recursivelyComputeLevel() {
     String tempName = this.name;
-    String levelString = null;
+    Level level = null;
     int indexOfLastDot = tempName.length();
-    while ((levelString == null) && (indexOfLastDot > -1)) {
+    while ((level == null) && (indexOfLastDot > -1)) {
       tempName = tempName.substring(0, indexOfLastDot);
-      levelString = BukkitPluginLoggerAdapter.getStringProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_PREFIX_LOG
-                                                                    + tempName,
-                                                                null);
+      level = BukkitPluginLoggerAdapter.stringToLevel(BukkitPluginLoggerAdapter.getStringProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_PREFIX_LOG
+                                                                                                      + tempName,
+                                                                                                  null));
       indexOfLastDot = String.valueOf(tempName).lastIndexOf(".");
     }
-    return levelString;
+    return level;
   }
 
 }

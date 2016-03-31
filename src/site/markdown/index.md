@@ -41,30 +41,30 @@ slf4j:
   # the plugin as "info" severity, but you'll see the actual severity in the
   # log message. This is due to a Bukkit logging limitation.
   #
-  # If not specified, default is "info".
+  # If not specified or given an invalid value, defaults to "info".
   defaultLogLevel: info
   
   # Shows an "[SLF4J]" header for every message logged through SLF4Bukkit.
   #
-  # If not specified, default is "false".
+  # If not specified or given an invalid value, defaults to "false".
   showHeader: false
   
   # Shows the name of each thread that is logging via SLF4Bukkit. You probably
   # don't want this information unless you're helping troubleshoot a plugin.
   #
-  # If not specified, default is "false".
+  # If not specified or given an invalid value, defaults to "false".
   showThreadName: false
   
   # Shows the full logger name (e.g. "info.ronjenkins.bukkit.MyPlugin").
   #
-  # If not specified, default is "false".
+  # If not specified or given an invalid value, defaults to "false".
   showLogName: false
   
   # Shows the short logger name, which is the short Java package name format
   # (e.g. a logger named "info.ronjenkins.bukkit.MyPlugin" would have a short
   # name of "i.r.b.MyPlugin".
   #
-  # If not specified, default is "true".
+  # If not specified or given an invalid value, defaults to "true".
   showShortLogName: true
   
   # This section controls logging levels for individual loggers.
@@ -77,6 +77,11 @@ slf4j:
     # The documentation for your plugin should elaborate on what logger names
     # are available. As a general rule, you won't need to specify levels for
     # specific loggers.
+    #
+    # For any logger, if the level specified here is invalid, or if the level is
+    # not specified at all, the level of the closest parent logger is used. If
+    # none of the logger's ancestors have a valid level defined, the
+    # value of "slf4j.defaultLogLevel" is used.
     info.ronjenkins.bukkit.MyPlugin: debug
     info.ronjenkins.SomeOtherLogger: warn
 ```

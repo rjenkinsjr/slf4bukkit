@@ -688,12 +688,20 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    *         of its ancestors define a logging level.
    */
   private Level determineCurrentLevel() {
-    final Level level = this.recursivelyComputeLevel();
-    if (level != null) {
-      return level;
-    } else {
-      return BukkitPluginLoggerAdapter.CONFIG_VALUE_DEFAULT_LOG_LEVEL;
+    // Compute the current level, which may be null.
+    String tempName = this.name;
+    Level level = null;
+    int indexOfLastDot = tempName.length();
+    while ((level == null) && (indexOfLastDot > -1)) {
+      tempName = tempName.substring(0, indexOfLastDot);
+      level = BukkitPluginLoggerAdapter.stringToLevel(BukkitPluginLoggerAdapter.getStringProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_PREFIX_LOG
+                                                                                                      + tempName,
+                                                                                                  null));
+      indexOfLastDot = String.valueOf(tempName).lastIndexOf(".");
     }
+    // Return the default value if we got null.
+    return (level == null) ? BukkitPluginLoggerAdapter.CONFIG_VALUE_DEFAULT_LOG_LEVEL
+                          : level;
   }
 
   /**
@@ -899,27 +907,6 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
     this.julLog(logger, BukkitPluginLoggerAdapter.CLASS_SELF,
                 BukkitPluginLoggerAdapter.slf4jLevelIntToBukkitJULLevel(level),
                 BukkitColorMapper.map(buf.toString()), throwable);
-  }
-
-  /**
-   * Computes this logger's current logging level, based on the Bukkit plugin
-   * config.
-   * 
-   * @return null if neither this logger nor any of its ancestors define a
-   *         logging level.
-   */
-  private Level recursivelyComputeLevel() {
-    String tempName = this.name;
-    Level level = null;
-    int indexOfLastDot = tempName.length();
-    while ((level == null) && (indexOfLastDot > -1)) {
-      tempName = tempName.substring(0, indexOfLastDot);
-      level = BukkitPluginLoggerAdapter.stringToLevel(BukkitPluginLoggerAdapter.getStringProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_PREFIX_LOG
-                                                                                                      + tempName,
-                                                                                                  null));
-      indexOfLastDot = String.valueOf(tempName).lastIndexOf(".");
-    }
-    return level;
   }
 
 }

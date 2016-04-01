@@ -27,7 +27,7 @@ import com.google.common.collect.ImmutableMap;
 /**
  * Utility class that maps {@link ChatColor} values to their JAnsi equivalents,
  * so that messages logged to the console are formatted correctly.
- * 
+ *
  * @author Ronald Jack Jenkins Jr.
  */
 public final class BukkitColorMapper {
@@ -61,15 +61,15 @@ public final class BukkitColorMapper {
 
   /**
    * Translates {@link ChatColor} directives to their JAnsi equivalents.
-   * 
+   *
    * @param input
    *          null is coerced to the empty string.
    * @return never null.
    */
   public static String map(final String input) {
-    if (input == null) return "";
+    if (input == null) { return ""; }
     String output = input;
-    for (final Map.Entry<ChatColor, String> mapping : MAP.entrySet()) {
+    for (final Map.Entry<ChatColor, String> mapping : BukkitColorMapper.MAP.entrySet()) {
       output = output.replace(mapping.getKey().toString(), mapping.getValue());
     }
     return output;

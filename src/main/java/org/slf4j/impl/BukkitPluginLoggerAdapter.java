@@ -44,6 +44,8 @@
  */
 package org.slf4j.impl;
 
+import info.ronjenkins.slf4bukkit.BukkitColorMapper;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -54,6 +56,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.plugin.Plugin;
 import org.slf4j.event.Level;
 import org.slf4j.helpers.FormattingTuple;
@@ -823,12 +826,12 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
     }
 
     // Append the message
-    buf.append(message);
+    buf.append(message).append(ChatColor.RESET);
 
     // Log to Bukkit
     this.julLog(logger, BukkitPluginLoggerAdapter.CLASS_SELF,
                 BukkitPluginLoggerAdapter.slf4jLevelIntToBukkitJULLevel(level),
-                buf.toString(), t);
+                BukkitColorMapper.map(buf.toString()), t);
   }
 
   private Level recursivelyComputeLevel() {

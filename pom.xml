@@ -63,6 +63,12 @@
       <version>1.9-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>org.fusesource.jansi</groupId>
+      <artifactId>jansi</artifactId>
+      <version>1.11</version>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
   <!-- Build behavior -->
   <build>

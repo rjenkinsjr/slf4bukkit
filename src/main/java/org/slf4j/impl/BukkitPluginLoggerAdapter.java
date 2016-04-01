@@ -269,6 +269,18 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
     }
   }
 
+  /**
+   * Returns a boolean property from the Bukkit plugin config.
+   * 
+   * @param name
+   *          the desired property.
+   * @param defaultValue
+   *          the fallback value returned by this method.
+   * @return {@code defaultValue} if the Bukkit plugin is not available, if the
+   *         desired property is not defined in the config, or if the desired
+   *         property's value is not either "true" or "false"
+   *         (case-insensitive).
+   */
   private static boolean getBooleanProperty(final String name,
                                             final boolean defaultValue) {
     synchronized (BukkitPluginLoggerAdapter.INITIALIZATION_LOCK) {
@@ -294,6 +306,16 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
     }
   }
 
+  /**
+   * Returns a string property from the Bukkit plugin config.
+   * 
+   * @param name
+   *          the desired property.
+   * @param defaultValue
+   *          the fallback value returned by this method.
+   * @return {@code defaultValue} if the Bukkit plugin is not available, or if
+   *         the desired property is not defined in the config.
+   */
   private static String getStringProperty(final String name,
                                           final String defaultValue) {
     synchronized (BukkitPluginLoggerAdapter.INITIALIZATION_LOCK) {
@@ -342,6 +364,14 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    * Logger API implementations
    */
 
+  /**
+   * Convert YAML logging level properties to SLF4J level objects.
+   * 
+   * @param levelStr
+   *          the level property value from the YAML config.
+   * @return null iff the input does not map to a SLF4J logging level name in a
+   *         case-insensitive fashion.
+   */
   private static Level stringToLevel(final String levelStr) {
     if ("trace".equalsIgnoreCase(levelStr)) {
       return Level.TRACE;
@@ -629,6 +659,13 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
     this.log(BukkitPluginLoggerAdapter.CLASS_SELF, Level.WARN, msg, t);
   }
 
+  /**
+   * Computes this logger's short name, which is equivalent to the short Java
+   * package name format (e.g. a logger named "info.ronjenkins.bukkit.MyPlugin"
+   * would have a short name of "i.r.b.MyPlugin").
+   * 
+   * @return never null.
+   */
   private String computeShortName() {
     final List<String> splitName = new ArrayList<String>();
     splitName.addAll(Arrays.asList(this.name.split("\\.")));
@@ -643,6 +680,13 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
     return shortName.toString();
   }
 
+  /**
+   * Computes this logger's current logging level, based on the Bukkit plugin
+   * config.
+   * 
+   * @return the value of "slf4j.defaultLogLevel" if neither this logger nor any
+   *         of its ancestors define a logging level.
+   */
   private Level determineCurrentLevel() {
     final Level level = this.recursivelyComputeLevel();
     if (level != null) {
@@ -656,9 +700,11 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    * For formatted messages, first substitute arguments and then log.
    *
    * @param level
+   *          the level of this message.
    * @param format
+   *          the message format string.
    * @param arguments
-   *          a list of 3 ore more arguments
+   *          3 or more arguments.
    */
   private void formatAndLog(final Level level, final String format,
                             final Object... arguments) {
@@ -672,9 +718,13 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    * For formatted messages, first substitute arguments and then log.
    *
    * @param level
+   *          the level of this message.
    * @param format
+   *          the message format string.
    * @param arg1
+   *          format argument #1.
    * @param arg2
+   *          format argument #2.
    */
   private void formatAndLog(final Level level, final String format,
                             final Object arg1, final Object arg2) {
@@ -689,6 +739,7 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
    *
    * @param logLevel
    *          is this level enabled?
+   * @return true if enabled, false if disabled.
    */
   private boolean isLevelEnabled(final Level logLevel) {
     // Ensure that SLF4Bukkit is initialized. Every public API call passes
@@ -707,10 +758,10 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
   }
 
   /**
-   * Fill in caller data if possible.
+   * Fill in JUL caller data if possible.
    *
    * @param record
-   *          The record to update
+   *          the record to update.
    */
   private void
       julFillCallerData(final String callerFQCN, final LogRecord record) {
@@ -746,23 +797,29 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
 
   /**
    * Log the message at the specified level with the specified throwable if any.
-   * This method creates a LogRecord and fills in caller date before calling
-   * this instance's JDK14 logger.
+   * This method creates a LogRecord and fills in caller information before
+   * calling the passed Bukkit plugin/server logger.
    *
-   * See bug report #13 for more details.
+   * See SLF4J bug report #13 for more details.
    *
    * @param logger
+   *          the logger to which the message will be logged.
+   * @param callerFQCN
+   *          the FQCN of the class that is calling the logger.
    * @param level
-   * @param msg
-   * @param t
+   *          the desired log level of the message.
+   * @param message
+   *          the msg to be logged.
+   * @param throwable
+   *          the exception to be logged, may be null.
    */
   private void julLog(final Logger logger, final String callerFQCN,
-                      final java.util.logging.Level level, final String msg,
-                      final Throwable t) {
+                      final java.util.logging.Level level,
+                      final String message, final Throwable throwable) {
     // millis and thread are filled by the constructor
-    final LogRecord record = new LogRecord(level, msg);
+    final LogRecord record = new LogRecord(level, message);
     record.setLoggerName(this.getName());
-    record.setThrown(t);
+    record.setThrown(throwable);
     // Note: parameters in record are not set because SLF4J only
     // supports a single formatting style
     this.julFillCallerData(callerFQCN, record);
@@ -770,20 +827,20 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
   }
 
   /**
-   * This is our internal implementation for logging regular (non-parameterized)
-   * log messages.
+   * Assembles the final log message and sends it to the appropriate Bukkit
+   * logger.
    *
    * @param callerFQCN
-   *          the FQCN of the class that is calling the logger
+   *          the FQCN of the class that is calling the logger.
    * @param level
-   *          One of the LOG_LEVEL_XXX constants defining the log level
+   *          the desired log level of the message.
    * @param message
-   *          The message itself
-   * @param t
-   *          The exception whose stack trace should be logged
+   *          the message to be logged.
+   * @param throwable
+   *          the exception to be logged, may be null.
    */
   private void log(final String callerFQCN, final Level level,
-                   final String message, final Throwable t) {
+                   final String message, final Throwable throwable) {
     final Logger logger;
     synchronized (BukkitPluginLoggerAdapter.INITIALIZATION_LOCK) {
       // Ensure that the logger will accept this request.
@@ -792,16 +849,16 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
       logger = BukkitPluginLoggerAdapter.getBukkitLogger();
     }
 
-    // Prepare message
+    // Start building the log message.
     final StringBuilder buf = new StringBuilder(32);
 
-    // Indicate that this message comes from SLF4J
+    // Indicate that this message comes from SLF4J, if desired.
     if (BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_HEADER) {
       buf.append("[SLF4J]");
     }
 
-    // Print a readable representation of the log level (but only for log levels
-    // that Bukkit would otherwise eat)
+    // Print a readable representation of the log level, but only for log levels
+    // that Bukkit would otherwise eat.
     switch (level) {
       case TRACE:
         buf.append("[TRACE]");
@@ -813,7 +870,7 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
         break;
     }
 
-    // Append current thread name if so configured
+    // Append the current thread name, if desired.
     if (BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_THREAD_NAME) {
       buf.append('[');
       buf.append(Thread.currentThread().getName());
@@ -825,7 +882,7 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
       buf.append(' ');
     }
 
-    // Append the name of the log instance if so configured
+    // Append the name of the log instance, if desired.
     if (BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_LOG_NAME) {
       buf.append('{').append(this.name).append("} ");
     } else if (BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_SHORT_LOG_NAME) {
@@ -835,15 +892,22 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
       buf.append('{').append(this.shortLogName).append("} ");
     }
 
-    // Append the message
+    // Append the message.
     buf.append(message).append(ChatColor.RESET);
 
-    // Log to Bukkit
+    // Log the message.
     this.julLog(logger, BukkitPluginLoggerAdapter.CLASS_SELF,
                 BukkitPluginLoggerAdapter.slf4jLevelIntToBukkitJULLevel(level),
-                BukkitColorMapper.map(buf.toString()), t);
+                BukkitColorMapper.map(buf.toString()), throwable);
   }
 
+  /**
+   * Computes this logger's current logging level, based on the Bukkit plugin
+   * config.
+   * 
+   * @return null if neither this logger nor any of its ancestors define a
+   *         logging level.
+   */
   private Level recursivelyComputeLevel() {
     String tempName = this.name;
     Level level = null;

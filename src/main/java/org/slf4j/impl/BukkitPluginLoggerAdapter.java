@@ -77,39 +77,38 @@ import org.yaml.snakeyaml.Yaml;
  * </p>
  *
  * <ul>
- * <li><code>slf4j.defaultLogLevel</code> - Default log level for all SLF4Bukkit
+ * <li>{@code slf4j.defaultLogLevel} - Default log level for all SLF4Bukkit
  * loggers in this plugin. Must be one of "trace", "debug", "info", "warn", or
  * "error". If unspecified or given any other value, defaults to "info".</li>
  *
- * <li><code>slf4j.log.<em>a.b.c</em></code> - Logging detail level for an
- * SLF4Bukkit logger instance in this plugin named "a.b.c". Right-side value
- * must be one of "trace", "debug", "info", "warn", or "error". When a logger
- * named "a.b.c" is initialized, its level is assigned from this property. If
- * unspecified or given any other value, the level of the nearest parent logger
- * will be used. If no parent logger level is set, then the value specified by
- * <code>slf4j.defaultLogLevel</code> for this plugin will be used.</li>
+ * <li>{@code slf4j.log.<em>a.b.c</em>} - Logging detail level for an SLF4Bukkit
+ * logger instance in this plugin named "a.b.c". Right-side value must be one of
+ * "trace", "debug", "info", "warn", or "error". When a logger named "a.b.c" is
+ * initialized, its level is assigned from this property. If unspecified or
+ * given any other value, the level of the nearest parent logger will be used.
+ * If no parent logger level is set, then the value specified by
+ * {@code slf4j.defaultLogLevel} for this plugin will be used.</li>
  *
- * <li><code>slf4j.showHeader</code> -Set to <code>true</code> if you want to
- * output the {@code [SLF4J]} header. If unspecified or given any other value,
- * defaults to <code>false</code>.</li>
+ * <li>{@code slf4j.showHeader} -Set to {@code true} if you want to output the
+ * {@code [SLF4J]} header. If unspecified or given any other value, defaults to
+ * {@code false}.</li>
  *
- * <li><code>slf4j.showThreadName</code> -Set to <code>true</code> if you want
- * to output the current thread name, wrapped in brackets. If unspecified or
- * given any other value, defaults to <code>false</code>.</li>
+ * <li>{@code slf4j.showThreadName} -Set to {@code true} if you want to output
+ * the current thread name, wrapped in brackets. If unspecified or given any
+ * other value, defaults to {@code false}.</li>
  *
- * <li><code>slf4j.showLogName</code> - Set to <code>true</code> if you want the
- * logger instance name (wrapped in curly braces) to be included in output
- * messages. If unspecified or given any other value, defaults to
- * <code>false</code>. If this option is <code>true</code>, it overrides
- * <code>slf4j.showShortLogName</code>.</li>
+ * <li>{@code slf4j.showLogName} - Set to {@code true} if you want the logger
+ * instance name (wrapped in curly braces) to be included in output messages. If
+ * unspecified or given any other value, defaults to {@code false}. If this
+ * option is {@code true}, it overrides {@code slf4j.showShortLogName}.</li>
  *
- * <li><code>slf4j.showShortLogName</code> - Set to <code>true</code> if you
- * want the logger instance's short name (wrapped in curly braces) to be
- * included in output messages. The short name is equal to the full name with
- * every dot-separated portion of the full name (except the last portion)
- * truncated to its first character. If unspecified or given any other value,
- * defaults to <code>true</code>. This option is ignored if
- * <code>slf4j.showLogName</code> is <code>true</code>.</li>
+ * <li>{@code slf4j.showShortLogName} - Set to {@code true} if you want the
+ * logger instance's short name (wrapped in curly braces) to be included in
+ * output messages. The short name is equal to the full name with every
+ * dot-separated portion of the full name (except the last portion) truncated to
+ * its first character. If unspecified or given any other value, defaults to
+ * {@code true}. This option is ignored if {@code slf4j.showLogName} is
+ * {@code true}.</li>
  * </ul>
  *
  * <p>

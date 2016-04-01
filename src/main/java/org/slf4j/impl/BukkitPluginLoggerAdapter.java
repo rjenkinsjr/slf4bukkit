@@ -304,26 +304,36 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
     }
   }
 
+  /**
+   * Converts an SLF4J logging level to a Bukkit logging level.
+   * 
+   * <ul>
+   * <li>{@link Level#ERROR} maps to {@link java.util.logging.Level#SEVERE}.</li>
+   * <li>{@link Level#WARN} maps to {@link java.util.logging.Level#WARNING}.</li>
+   * <li>All others map to {@link java.util.logging.Level#INFO} (Bukkit won't
+   * log any messages higher than {@code INFO}).</li>
+   * </ul>
+   * 
+   * @param slf4jLevel
+   *          any SLF4J logging level.
+   * @return never null.
+   */
   private static java.util.logging.Level
       slf4jLevelIntToBukkitJULLevel(final Level slf4jLevel) {
     java.util.logging.Level julLevel;
     switch (slf4jLevel) {
-    // In Bukkit, Only the SEVERE, WARNING and INFO JUL levels are enabled, so
-    // SLF4J's TRACE and DEBUG levels must be logged at Bukkit's INFO level.
-      case TRACE:
-      case DEBUG:
-      case INFO:
-        julLevel = java.util.logging.Level.INFO;
+      case ERROR:
+        julLevel = java.util.logging.Level.SEVERE;
         break;
       case WARN:
         julLevel = java.util.logging.Level.WARNING;
         break;
-      case ERROR:
-        julLevel = java.util.logging.Level.SEVERE;
-        break;
       default:
-        throw new IllegalStateException("Level " + slf4jLevel
-                                        + " is not recognized.");
+        // In Bukkit, Only the SEVERE, WARNING and INFO JUL levels are enabled,
+        // so SLF4J's TRACE and DEBUG levels must be logged at Bukkit's INFO
+        // level.
+        julLevel = java.util.logging.Level.INFO;
+        break;
     }
     return julLevel;
   }

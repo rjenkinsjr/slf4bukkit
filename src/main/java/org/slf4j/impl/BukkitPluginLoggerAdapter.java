@@ -785,7 +785,7 @@ public final class BukkitPluginLoggerAdapter extends MarkerIgnoringBase {
 
     // Indicate that this message comes from SLF4J
     if (BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_HEADER) {
-      buf.append("SLF4J");
+      buf.append("[SLF4J]");
     }
 
     // Print a readable representation of the log level (but only for log levels

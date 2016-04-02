@@ -72,23 +72,23 @@ slf4j:
   showThreadName: false
   
   # This section controls default colors for logging levels. Each entry in this
-  # section maps one of SLF4J's logging levels to one of Bukkit's ChatColor
-  # values. The possible keys (levels) in this section are the possible values
-  # for the "slf4j.defaultLogLevel" property.
+  # section maps one of SLF4J's logging levels to one of SLF4Bukkit's
+  # ColorMarker values. The possible keys (levels) in this section are the
+  # possible values for the "slf4j.defaultLogLevel" property.
   #
-  # If either the key (level) name or the value (ChatColor) name does not match
-  # one of the possible values, that config entry is ignored. Keys and values
-  # are compared in a case-insensitive fashion.
+  # If either the key (level) name or the value (ColorMarker) name does not
+  # match one of the possible values, that config entry is ignored. Keys and
+  # values are compared in a case-insensitive fashion.
   #
   # The values in the plugin config are applied on top of the following
   # hardcoded default values:
   #   error: RED
   #   warn: YELLOW
-  #   info: RESET
-  #   debug: RESET
-  #   trace: RESET
+  #   info: NONE
+  #   debug: NONE
+  #   trace: NONE
   #
-  # The possible ChatColor values are:
+  # The ColorMarker values are:
   #   BLACK
   #   DARK_BLUE
   #   DARK_GREEN

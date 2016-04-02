@@ -111,12 +111,13 @@ import com.google.common.collect.ImmutableMap;
  * the current thread name, wrapped in brackets. If unspecified or given any
  * other value, defaults to {@code false}.</li>
  *
- * <li>{@code slf4j.format.LEVEL} - Default format for all messages of this
- * level. Possible values come are Bukkit's {@link ColorMarker} values. Both
- * keys and values in this section are treated as case-insensitive. Invalid
+ * <li>{@code slf4j.colors.LEVEL} - Default color for all messages of this
+ * level. Possible values come from SLF4Bukkit's {@link ColorMarker} values.
+ * Both keys and values in this section are treated as case-insensitive. Invalid
  * values for either the key or value of an entry result in that entry being
- * ignored. Default values are: error=RED, warn=YELLOW, others=RESET.
- * {@link ColorMarker}s always override these config values.</li>
+ * ignored. Default values are: error=RED, warn=YELLOW, others=NONE. When used
+ * programmatically via methods in this class, {@link ColorMarker}s always
+ * override these config values.</li>
  *
  * <li>{@code slf4j.log.<em>a.b.c</em>} - Logging detail level for an SLF4Bukkit
  * logger instance in this plugin named "a.b.c". Right-side value must be one of

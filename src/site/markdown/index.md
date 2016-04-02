@@ -30,7 +30,7 @@ If you were linked here by documentation for a plugin that you're using on your 
 Basic documentation of all available options is shown below. Your plugin likely has additional information regarding what portions of the plugin's logging facilities are configurable.
 
 ```yaml
-# This is the section within which all SLF4Bukkit configuration options is
+# This is the section within which all SLF4Bukkit configuration options are
 # contained. Its name is the same regardless of what the plugin's name is.
 slf4j:
 

@@ -39,11 +39,13 @@ public final class ColorString {
    *
    * @param append
    *          the string to append.
+   * @return this.
    */
-  public void aqua(final String append) {
+  public ColorString aqua(final String append) {
     synchronized (this.value) {
       this.setColor(ColorMarker.AQUA);
       this.value.append(append);
+      return this;
     }
   }
 
@@ -53,11 +55,13 @@ public final class ColorString {
    *
    * @param append
    *          the string to append.
+   * @return this.
    */
-  public void black(final String append) {
+  public ColorString black(final String append) {
     synchronized (this.value) {
       this.setColor(ColorMarker.BLACK);
       this.value.append(append);
+      return this;
     }
   }
 
@@ -67,11 +71,13 @@ public final class ColorString {
    *
    * @param append
    *          the string to append.
+   * @return this.
    */
-  public void blue(final String append) {
+  public ColorString blue(final String append) {
     synchronized (this.value) {
       this.setColor(ColorMarker.BLUE);
       this.value.append(append);
+      return this;
     }
   }
 
@@ -81,11 +87,13 @@ public final class ColorString {
    *
    * @param append
    *          the string to append.
+   * @return this.
    */
-  public void darkAqua(final String append) {
+  public ColorString darkAqua(final String append) {
     synchronized (this.value) {
       this.setColor(ColorMarker.DARK_AQUA);
       this.value.append(append);
+      return this;
     }
   }
 
@@ -95,11 +103,13 @@ public final class ColorString {
    *
    * @param append
    *          the string to append.
+   * @return this.
    */
-  public void darkBlue(final String append) {
+  public ColorString darkBlue(final String append) {
     synchronized (this.value) {
       this.setColor(ColorMarker.DARK_BLUE);
       this.value.append(append);
+      return this;
     }
   }
 
@@ -109,11 +119,13 @@ public final class ColorString {
    *
    * @param append
    *          the string to append.
+   * @return this.
    */
-  public void darkGray(final String append) {
+  public ColorString darkGray(final String append) {
     synchronized (this.value) {
       this.setColor(ColorMarker.DARK_GRAY);
       this.value.append(append);
+      return this;
     }
   }
 
@@ -123,11 +135,13 @@ public final class ColorString {
    *
    * @param append
    *          the string to append.
+   * @return this.
    */
-  public void darkGreen(final String append) {
+  public ColorString darkGreen(final String append) {
     synchronized (this.value) {
       this.setColor(ColorMarker.DARK_GREEN);
       this.value.append(append);
+      return this;
     }
   }
 
@@ -137,11 +151,13 @@ public final class ColorString {
    *
    * @param append
    *          the string to append.
+   * @return this.
    */
-  public void darkRed(final String append) {
+  public ColorString darkRed(final String append) {
     synchronized (this.value) {
       this.setColor(ColorMarker.DARK_RED);
       this.value.append(append);
+      return this;
     }
   }
 
@@ -151,11 +167,13 @@ public final class ColorString {
    *
    * @param append
    *          the string to append.
+   * @return this.
    */
-  public void gold(final String append) {
+  public ColorString gold(final String append) {
     synchronized (this.value) {
       this.setColor(ColorMarker.GOLD);
       this.value.append(append);
+      return this;
     }
   }
 
@@ -165,11 +183,13 @@ public final class ColorString {
    *
    * @param append
    *          the string to append.
+   * @return this.
    */
-  public void gray(final String append) {
+  public ColorString gray(final String append) {
     synchronized (this.value) {
       this.setColor(ColorMarker.GRAY);
       this.value.append(append);
+      return this;
     }
   }
 
@@ -179,11 +199,13 @@ public final class ColorString {
    *
    * @param append
    *          the string to append.
+   * @return this.
    */
-  public void green(final String append) {
+  public ColorString green(final String append) {
     synchronized (this.value) {
       this.setColor(ColorMarker.GREEN);
       this.value.append(append);
+      return this;
     }
   }
 
@@ -193,11 +215,13 @@ public final class ColorString {
    *
    * @param append
    *          the string to append.
+   * @return this.
    */
-  public void none(final String append) {
+  public ColorString none(final String append) {
     synchronized (this.value) {
       this.setColor(ColorMarker.NONE);
       this.value.append(append);
+      return this;
     }
   }
 
@@ -207,11 +231,13 @@ public final class ColorString {
    *
    * @param append
    *          the string to append.
+   * @return this.
    */
-  public void pink(final String append) {
+  public ColorString pink(final String append) {
     synchronized (this.value) {
       this.setColor(ColorMarker.LIGHT_PURPLE);
       this.value.append(append);
+      return this;
     }
   }
 
@@ -221,11 +247,13 @@ public final class ColorString {
    *
    * @param append
    *          the string to append.
+   * @return this.
    */
-  public void purple(final String append) {
+  public ColorString purple(final String append) {
     synchronized (this.value) {
       this.setColor(ColorMarker.DARK_PURPLE);
       this.value.append(append);
+      return this;
     }
   }
 
@@ -235,11 +263,13 @@ public final class ColorString {
    *
    * @param append
    *          the string to append.
+   * @return this.
    */
-  public void red(final String append) {
+  public ColorString red(final String append) {
     synchronized (this.value) {
       this.setColor(ColorMarker.RED);
       this.value.append(append);
+      return this;
     }
   }
 
@@ -281,11 +311,13 @@ public final class ColorString {
    *
    * @param append
    *          the string to append.
+   * @return this.
    */
-  public void white(final String append) {
+  public ColorString white(final String append) {
     synchronized (this.value) {
       this.setColor(ColorMarker.WHITE);
       this.value.append(append);
+      return this;
     }
   }
 
@@ -295,11 +327,13 @@ public final class ColorString {
    *
    * @param append
    *          the string to append.
+   * @return this.
    */
-  public void yellow(final String append) {
+  public ColorString yellow(final String append) {
     synchronized (this.value) {
       this.setColor(ColorMarker.YELLOW);
       this.value.append(append);
+      return this;
     }
   }
 

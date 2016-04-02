@@ -35,7 +35,7 @@ Basic documentation of all available options is shown below. Your plugin likely 
 slf4j:
 
   # Default log level for all plugin logging activity. Possible values are
-  # "trace", "debug", "info", "warn", or "error".
+  # "trace", "debug", "info", "warn", or "error" (case-insensitive).
   #
   # If the plugin logs any "trace" or "debug" messages, they will be logged by
   # the plugin as "info" severity, but you'll see the actual severity in the
@@ -48,12 +48,6 @@ slf4j:
   #
   # If not specified or given an invalid value, defaults to "false".
   showHeader: false
-  
-  # Shows the name of the logging thread, wrapped in brackets. You probably
-  # don't want this information unless you're helping troubleshoot a plugin.
-  #
-  # If not specified or given an invalid value, defaults to "false".
-  showThreadName: false
   
   # Shows the full logger name (e.g. "info.ronjenkins.bukkit.MyPlugin"),
   # wrapped in curly braces.
@@ -71,12 +65,61 @@ slf4j:
   # "slf4j.showLogName" is true, this option is ignored.
   showShortLogName: true
   
+  # Shows the name of the logging thread, wrapped in brackets. You probably
+  # don't want this information unless you're helping troubleshoot a plugin.
+  #
+  # If not specified or given an invalid value, defaults to "false".
+  showThreadName: false
+  
+  # This section controls default colors for logging levels. Each entry in this
+  # section maps one of SLF4J's logging levels to one of Bukkit's ChatColor
+  # values. The possible keys (levels) in this section are the possible values
+  # for the "slf4j.defaultLogLevel" property.
+  #
+  # If either the key (level) name or the value (ChatColor) name does not match
+  # one of the possible values, that config entry is ignored. Keys and values
+  # are compared in a case-insensitive fashion.
+  #
+  # The values in the plugin config are applied on top of the following
+  # hardcoded default values:
+  #   error: RED
+  #   warn: YELLOW
+  #   info: RESET
+  #   debug: RESET
+  #   trace: RESET
+  #
+  # The possible ChatColor values are:
+  #   BLACK
+  #   DARK_BLUE
+  #   DARK_GREEN
+  #   DARK_AQUA
+  #   DARK_RED
+  #   DARK_PURPLE
+  #   GOLD
+  #   GRAY
+  #   DARK_GRAY
+  #   BLUE
+  #   GREEN
+  #   AQUA
+  #   RED
+  #   LIGHT_PURPLE
+  #   YELLOW
+  #   WHITE
+  #   NONE (default console color)
+  colors:
+    error: RED
+    warn: YELLOW
+    info: NONE
+    debug: NONE
+    trace: NONE
+  
   # This section controls logging levels for individual loggers.
   log:
   
     # For each element in this section, the key is the full logger name and the
     # value is the logging level for that logger. Possible logging levels are
-    # the same as what's available for the "slf4j.defaultLogLevel" property.
+    # the same as what's available for the "slf4j.defaultLogLevel" property
+    # (case-insensitive).
     #
     # The documentation for your plugin should elaborate on what logger names
     # are available. As a general rule, you won't need to specify levels for

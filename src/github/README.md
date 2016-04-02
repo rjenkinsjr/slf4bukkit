@@ -37,6 +37,6 @@ If you wish to use [SLF4J](http://slf4j.org) in your Bukkit plugin, or if your p
 
 + (Optional) Add your desired default configuration values to your plugin's built-in [config.yml](${project.url}) file. For more details, see the Javadocs for the [BukkitPluginLoggerAdapter](${project.url}/apidocs/org/slf4j/impl/BukkitPluginLoggerAdapter.html) class.
 + (Optional) Use the [SLF4J API](http://www.slf4j.org/api/org/slf4j/Logger.html) in your code.
-    + SLF4Bukkit supports only [Bukkit formatting markers](${project.url}/apidocs/info/ronjenkins/slf4bukkit/BukkitColorMarker.html), which format the entire message and associated throwable (if any). All other markers are discarded.
+    + SLF4Bukkit supports only [Bukkit formatting markers](${project.url}/apidocs/info/ronjenkins/slf4bukkit/ColorMarker.html), which format the entire message and associated throwable (if any). All other markers are discarded. Bukkit formatting markers always override the default level-specific formatting defined in the plugin config.
     + In addition to using the Bukkit formatting markers, you can use Bukkit's `ChatColor` values to further format your message.
     + SLF4Bukkit issues `ChatColor.RESET` after every log message, so you don't have to worry about resetting after each message.

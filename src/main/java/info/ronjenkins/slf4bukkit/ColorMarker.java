@@ -23,27 +23,24 @@ import org.bukkit.ChatColor;
 import org.slf4j.Marker;
 
 /**
- * SLF4J markers that map to {@link ChatColor}s. These markers never contain any
- * references (other markers).
+ * SLF4J markers that map to a subset of {@link ChatColor}s. These markers never
+ * contain any references (other markers).
  *
  * @author Ronald Jack Jenkins Jr.
  */
-public enum BukkitColorMarker implements Marker {
+public enum ColorMarker implements Marker {
 
   AQUA(ChatColor.AQUA), BLACK(ChatColor.BLACK), BLUE(ChatColor.BLUE),
-  BOLD(ChatColor.BOLD), DARK_AQUA(ChatColor.DARK_AQUA),
-  DARK_BLUE(ChatColor.DARK_BLUE), DARK_GRAY(ChatColor.DARK_GRAY),
-  DARK_GREEN(ChatColor.DARK_GREEN), DARK_PURPLE(ChatColor.DARK_PURPLE),
-  DARK_RED(ChatColor.DARK_RED), GOLD(ChatColor.GOLD), GRAY(ChatColor.GRAY),
-  GREEN(ChatColor.GREEN), ITALIC(ChatColor.ITALIC),
-  LIGHT_PURPLE(ChatColor.LIGHT_PURPLE), MAGIC(ChatColor.MAGIC),
-  RED(ChatColor.RED), RESET(ChatColor.RESET),
-  STRIKETHROUGH(ChatColor.STRIKETHROUGH), UNDERLINE(ChatColor.UNDERLINE),
-  WHITE(ChatColor.WHITE), YELLOW(ChatColor.YELLOW);
+  DARK_AQUA(ChatColor.DARK_AQUA), DARK_BLUE(ChatColor.DARK_BLUE),
+  DARK_GRAY(ChatColor.DARK_GRAY), DARK_GREEN(ChatColor.DARK_GREEN),
+  DARK_PURPLE(ChatColor.DARK_PURPLE), DARK_RED(ChatColor.DARK_RED),
+  GOLD(ChatColor.GOLD), GRAY(ChatColor.GRAY), GREEN(ChatColor.GREEN),
+  LIGHT_PURPLE(ChatColor.LIGHT_PURPLE), NONE(ChatColor.RESET),
+  RED(ChatColor.RED), WHITE(ChatColor.WHITE), YELLOW(ChatColor.YELLOW);
 
   private final ChatColor value;
 
-  private BukkitColorMarker(final ChatColor value) {
+  private ColorMarker(final ChatColor value) {
     this.value = value;
   }
 

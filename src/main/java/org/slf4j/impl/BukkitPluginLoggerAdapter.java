@@ -44,19 +44,21 @@
  */
 package org.slf4j.impl;
 
-import info.ronjenkins.slf4bukkit.BukkitColorMapper;
-import info.ronjenkins.slf4bukkit.BukkitColorMarker;
+import info.ronjenkins.slf4bukkit.ColorMapper;
+import info.ronjenkins.slf4bukkit.ColorMarker;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.Plugin;
 import org.slf4j.Logger;
 import org.slf4j.Marker;
@@ -64,6 +66,8 @@ import org.slf4j.event.Level;
 import org.slf4j.helpers.FormattingTuple;
 import org.slf4j.helpers.MessageFormatter;
 import org.yaml.snakeyaml.Yaml;
+
+import com.google.common.collect.ImmutableMap;
 
 /**
  * <p>
@@ -83,23 +87,12 @@ import org.yaml.snakeyaml.Yaml;
  * <ul>
  * <li>{@code slf4j.defaultLogLevel} - Default log level for all SLF4Bukkit
  * loggers in this plugin. Must be one of "trace", "debug", "info", "warn", or
- * "error". If unspecified or given any other value, defaults to "info".</li>
- *
- * <li>{@code slf4j.log.<em>a.b.c</em>} - Logging detail level for an SLF4Bukkit
- * logger instance in this plugin named "a.b.c". Right-side value must be one of
- * "trace", "debug", "info", "warn", or "error". When a logger named "a.b.c" is
- * initialized, its level is assigned from this property. If unspecified or
- * given any other value, the level of the nearest parent logger will be used.
- * If no parent logger level is set, then the value specified by
- * {@code slf4j.defaultLogLevel} for this plugin will be used.</li>
+ * "error" (case-insensitive). If unspecified or given any other value, defaults
+ * to "info".</li>
  *
  * <li>{@code slf4j.showHeader} -Set to {@code true} if you want to output the
  * {@code [SLF4J]} header. If unspecified or given any other value, defaults to
  * {@code false}.</li>
- *
- * <li>{@code slf4j.showThreadName} -Set to {@code true} if you want to output
- * the current thread name, wrapped in brackets. If unspecified or given any
- * other value, defaults to {@code false}.</li>
  *
  * <li>{@code slf4j.showLogName} - Set to {@code true} if you want the logger
  * instance name (wrapped in curly braces) to be included in output messages. If
@@ -113,6 +106,25 @@ import org.yaml.snakeyaml.Yaml;
  * its first character. If unspecified or given any other value, defaults to
  * {@code true}. This option is ignored if {@code slf4j.showLogName} is
  * {@code true}.</li>
+ *
+ * <li>{@code slf4j.showThreadName} -Set to {@code true} if you want to output
+ * the current thread name, wrapped in brackets. If unspecified or given any
+ * other value, defaults to {@code false}.</li>
+ *
+ * <li>{@code slf4j.format.LEVEL} - Default format for all messages of this
+ * level. Possible values come are Bukkit's {@link ColorMarker} values. Both
+ * keys and values in this section are treated as case-insensitive. Invalid
+ * values for either the key or value of an entry result in that entry being
+ * ignored. Default values are: error=RED, warn=YELLOW, others=RESET.
+ * {@link ColorMarker}s always override these config values.</li>
+ *
+ * <li>{@code slf4j.log.<em>a.b.c</em>} - Logging detail level for an SLF4Bukkit
+ * logger instance in this plugin named "a.b.c". Right-side value must be one of
+ * "trace", "debug", "info", "warn", or "error" (case-insensitive). When a
+ * logger named "a.b.c" is initialized, its level is assigned from this
+ * property. If unspecified or given any other value, the level of the nearest
+ * parent logger will be used. If no parent logger level is set, then the value
+ * specified by {@code slf4j.defaultLogLevel} for this plugin will be used.</li>
  * </ul>
  *
  * <p>
@@ -162,10 +174,9 @@ import org.yaml.snakeyaml.Yaml;
  * </p>
  *
  * <p>
- * This logger supports only {@link BukkitColorMarker}s, which are used to
- * format the logged message and throwable. All other marker types are ignored.
- * The usage of markers does not affect whether or not a given logging level is
- * enabled.
+ * This logger supports only {@link ColorMarker}s, which are used to format the
+ * logged message and throwable. All other marker types are ignored. The usage
+ * of markers does not affect whether or not a given logging level is enabled.
  * </p>
  *
  * @author Ceki G&uuml;lc&uuml;
@@ -179,31 +190,34 @@ import org.yaml.snakeyaml.Yaml;
 public final class BukkitPluginLoggerAdapter implements Logger {
 
   // Plugin reference.
-  private static transient Plugin BUKKIT_PLUGIN;
-  private static transient String BUKKIT_PLUGIN_NAME;
+  private static transient Plugin              BUKKIT_PLUGIN;
+  private static transient String              BUKKIT_PLUGIN_NAME;
   // Configuration parameters.
-  private static final String     CONFIG_FALLBACK_DEFAULT_LOG_LEVEL   = "info";
-  private static final boolean    CONFIG_FALLBACK_SHOW_HEADER         = false;
-  private static final boolean    CONFIG_FALLBACK_SHOW_LOG_NAME       = false;
-  private static final boolean    CONFIG_FALLBACK_SHOW_SHORT_LOG_NAME = true;
-  private static final boolean    CONFIG_FALLBACK_SHOW_THREAD_NAME    = false;
-  private static final String     CONFIG_KEY_DEFAULT_LOG_LEVEL        = "slf4j.defaultLogLevel";
-  private static final String     CONFIG_KEY_PREFIX_LOG               = "slf4j.log.";
-  private static final String     CONFIG_KEY_SHOW_HEADER              = "slf4j.showHeader";
-  private static final String     CONFIG_KEY_SHOW_LOG_NAME            = "slf4j.showLogName";
-  private static final String     CONFIG_KEY_SHOW_SHORT_LOG_NAME      = "slf4j.showShortLogName";
-  private static final String     CONFIG_KEY_SHOW_THREAD_NAME         = "slf4j.showThreadName";
-  private static Level            CONFIG_VALUE_DEFAULT_LOG_LEVEL;
-  private static boolean          CONFIG_VALUE_SHOW_HEADER;
-  private static boolean          CONFIG_VALUE_SHOW_LOG_NAME;
-  private static boolean          CONFIG_VALUE_SHOW_SHORT_LOG_NAME;
-  private static boolean          CONFIG_VALUE_SHOW_THREAD_NAME;
+  private static final String                  CONFIG_FALLBACK_DEFAULT_LOG_LEVEL   = "info";
+  private static final Map<Level, ColorMarker> CONFIG_FALLBACK_LEVEL_COLORS        = BukkitPluginLoggerAdapter.fallbackLevelColors();
+  private static final boolean                 CONFIG_FALLBACK_SHOW_HEADER         = false;
+  private static final boolean                 CONFIG_FALLBACK_SHOW_LOG_NAME       = false;
+  private static final boolean                 CONFIG_FALLBACK_SHOW_SHORT_LOG_NAME = true;
+  private static final boolean                 CONFIG_FALLBACK_SHOW_THREAD_NAME    = false;
+  private static final String                  CONFIG_KEY_DEFAULT_LOG_LEVEL        = "slf4j.defaultLogLevel";
+  private static final String                  CONFIG_KEY_LEVEL_COLORS             = "slf4j.colors";
+  private static final String                  CONFIG_KEY_PREFIX_LOG               = "slf4j.log.";
+  private static final String                  CONFIG_KEY_SHOW_HEADER              = "slf4j.showHeader";
+  private static final String                  CONFIG_KEY_SHOW_LOG_NAME            = "slf4j.showLogName";
+  private static final String                  CONFIG_KEY_SHOW_SHORT_LOG_NAME      = "slf4j.showShortLogName";
+  private static final String                  CONFIG_KEY_SHOW_THREAD_NAME         = "slf4j.showThreadName";
+  private static Level                         CONFIG_VALUE_DEFAULT_LOG_LEVEL;
+  private static Map<Level, ColorMarker>       CONFIG_VALUE_LEVEL_COLORS;
+  private static boolean                       CONFIG_VALUE_SHOW_HEADER;
+  private static boolean                       CONFIG_VALUE_SHOW_LOG_NAME;
+  private static boolean                       CONFIG_VALUE_SHOW_SHORT_LOG_NAME;
+  private static boolean                       CONFIG_VALUE_SHOW_THREAD_NAME;
   // Initialization lock.
-  private static final Object     INITIALIZATION_LOCK                 = new Object();
+  private static final Object                  INITIALIZATION_LOCK                 = new Object();
   // The logger name.
-  private final String            name;
+  private final String                         name;
   // The short name of this simple log instance
-  private transient String        shortLogName                        = null;
+  private transient String                     shortLogName                        = null;
 
   // NOTE: BukkitPluginLoggerAdapter constructor should have only package access
   // so that only BukkitPluginLoggerFactory be able to create one.
@@ -265,6 +279,8 @@ public final class BukkitPluginLoggerAdapter implements Logger {
       if (BukkitPluginLoggerAdapter.CONFIG_VALUE_DEFAULT_LOG_LEVEL == null) {
         BukkitPluginLoggerAdapter.CONFIG_VALUE_DEFAULT_LOG_LEVEL = BukkitPluginLoggerAdapter.stringToLevel(BukkitPluginLoggerAdapter.CONFIG_FALLBACK_DEFAULT_LOG_LEVEL);
       }
+      BukkitPluginLoggerAdapter.CONFIG_VALUE_LEVEL_COLORS = BukkitPluginLoggerAdapter.getLevelColorsMap(BukkitPluginLoggerAdapter.CONFIG_KEY_LEVEL_COLORS,
+                                                                                                        BukkitPluginLoggerAdapter.CONFIG_FALLBACK_LEVEL_COLORS);
       BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_HEADER = BukkitPluginLoggerAdapter.getBooleanProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_SHOW_HEADER,
                                                                                                         BukkitPluginLoggerAdapter.CONFIG_FALLBACK_SHOW_HEADER);
       BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_LOG_NAME = BukkitPluginLoggerAdapter.getBooleanProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_SHOW_LOG_NAME,
@@ -274,6 +290,20 @@ public final class BukkitPluginLoggerAdapter implements Logger {
       BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_THREAD_NAME = BukkitPluginLoggerAdapter.getBooleanProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_SHOW_THREAD_NAME,
                                                                                                              BukkitPluginLoggerAdapter.CONFIG_FALLBACK_SHOW_THREAD_NAME);
     }
+  }
+
+  /**
+   * Returns the fallback map of logging levels to their default colors.
+   *
+   * @return never null.
+   */
+  private static Map<Level, ColorMarker> fallbackLevelColors() {
+    return ImmutableMap.<Level, ColorMarker> builder()
+                       .put(Level.ERROR, ColorMarker.RED)
+                       .put(Level.WARN, ColorMarker.YELLOW)
+                       .put(Level.INFO, ColorMarker.NONE)
+                       .put(Level.DEBUG, ColorMarker.NONE)
+                       .put(Level.TRACE, ColorMarker.NONE).build();
   }
 
   /**
@@ -310,6 +340,59 @@ public final class BukkitPluginLoggerAdapter implements Logger {
     synchronized (BukkitPluginLoggerAdapter.INITIALIZATION_LOCK) {
       return BukkitPluginLoggerAdapter.BUKKIT_PLUGIN == null ? Bukkit.getLogger()
                                                             : BukkitPluginLoggerAdapter.BUKKIT_PLUGIN.getLogger();
+    }
+  }
+
+  /**
+   * Returns the map of logging levels to colors, taken from the Bukkit plugin
+   * config. For each relevant entry in the plugin config, if either the key
+   * name or the value name is invalid, that entry is ignored and the default
+   * value is used instead.
+   *
+   * @param property
+   *          the config property where the map exists.
+   * @param defaultValue
+   *          the fallback values returned by this method.
+   * @return never null, always contains one mapping for each {@link Level}, and
+   *         contains no null keys/values. Equal to {@code defaultValue} if the
+   *         Bukkit plugin is not available, or if the desired property is not
+   *         defined in the config.
+   */
+  private static Map<Level, ColorMarker>
+      getLevelColorsMap(final String property,
+                        final Map<Level, ColorMarker> defaultValues) {
+    synchronized (BukkitPluginLoggerAdapter.INITIALIZATION_LOCK) {
+      // Check for the plugin.
+      if (BukkitPluginLoggerAdapter.BUKKIT_PLUGIN == null) { return defaultValues; }
+      final ConfigurationSection config = BukkitPluginLoggerAdapter.BUKKIT_PLUGIN.getConfig()
+                                                                                 .getConfigurationSection(property);
+      // Quit if the config isn't specified.
+      if (config == null) { return defaultValues; }
+      // Translate each portion of the config. Skip invalid keys/values.
+      final Map<String, Object> configValues = config.getValues(false);
+      final Map<Level, ColorMarker> convertedConfigValues = new HashMap<Level, ColorMarker>();
+      for (final Map.Entry<String, Object> configValue : configValues.entrySet()) {
+        final String levelName = configValue.getKey().toUpperCase();
+        final String formatName = configValue.getValue().toString()
+                                             .toUpperCase();
+        Level level;
+        ColorMarker format;
+        try {
+          level = Level.valueOf(levelName);
+          format = ColorMarker.valueOf(formatName);
+        } catch (final IllegalArgumentException e) {
+          // This is expected, so don't log it.
+          continue;
+        }
+        convertedConfigValues.put(level, format);
+      }
+      // Merge the default and config-based map; the latter takes priority.
+      final Map<Level, ColorMarker> finalConfigValues = new HashMap<Level, ColorMarker>();
+      finalConfigValues.putAll(defaultValues);
+      finalConfigValues.putAll(convertedConfigValues);
+      // Done; cast as immutable.
+      return ImmutableMap.<Level, ColorMarker> builder()
+                         .putAll(finalConfigValues).build();
     }
   }
 
@@ -892,9 +975,13 @@ public final class BukkitPluginLoggerAdapter implements Logger {
     final StringBuilder buf = new StringBuilder(32);
     boolean hasHeader = false;
 
-    // Use the marker, if applicable.
-    if (marker instanceof BukkitColorMarker) {
-      buf.append(((BukkitColorMarker) marker).getValue());
+    // Use the marker, if applicable. Otherwise, use the default color for
+    // this level.
+    if (marker instanceof ColorMarker) {
+      buf.append(((ColorMarker) marker).getValue());
+    } else {
+      buf.append(BukkitPluginLoggerAdapter.CONFIG_VALUE_LEVEL_COLORS.get(level)
+                                                                    .getValue());
     }
 
     // Indicate that this message comes from SLF4J, if desired.
@@ -955,6 +1042,6 @@ public final class BukkitPluginLoggerAdapter implements Logger {
 
     // Log the message.
     logger.log(BukkitPluginLoggerAdapter.slf4jLevelIntToBukkitJULLevel(level),
-               BukkitColorMapper.map(buf.toString()));
+               ColorMapper.map(buf.toString()));
   }
 }

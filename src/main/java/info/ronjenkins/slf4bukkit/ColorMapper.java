@@ -30,7 +30,7 @@ import com.google.common.collect.ImmutableMap;
  *
  * @author Ronald Jack Jenkins Jr.
  */
-public final class BukkitColorMapper {
+public final class ColorMapper {
 
   // @formatter:off
   private static final Map<ChatColor, String> MAP = ImmutableMap.<ChatColor, String>builder()
@@ -69,7 +69,7 @@ public final class BukkitColorMapper {
   public static String map(final String input) {
     if (input == null) { return ""; }
     String output = input;
-    for (final Map.Entry<ChatColor, String> mapping : BukkitColorMapper.MAP.entrySet()) {
+    for (final Map.Entry<ChatColor, String> mapping : ColorMapper.MAP.entrySet()) {
       output = output.replace(mapping.getKey().toString(), mapping.getValue());
     }
     return output;

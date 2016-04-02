@@ -31,12 +31,13 @@ If you wish to use [SLF4J](http://slf4j.org) in your Bukkit plugin, or if your p
 <dependency>
   <groupId>info.ronjenkins</groupId>
   <artifactId>slf4bukkit</artifactId>
-  <version>0.1.2</version>
+  <version>0.1.3</version>
 </dependency>
 ```
 
-+ (Optional) Add your desired default configuration values to your plugin's built-in [config.yml](http://rjenkinsjr.github.io/slf4bukkit) file. For more details, see the Javadocs for the [BukkitPluginLoggerAdapter](http://rjenkinsjr.github.io/slf4bukkit/apidocs/org/slf4j/impl/BukkitPluginLoggerAdapter.html) class.
++ (Optional) Add your desired default configuration values to your plugin's built-in [config.yml](http://rjenkinsjr.github.io/slf4bukkit) file. For more details, see the Javadocs for the [BukkitLoggerAdapter](http://rjenkinsjr.github.io/slf4bukkit/apidocs/org/slf4j/impl/BukkitLoggerAdapter.html) class.
 + (Optional) Use the [SLF4J API](http://www.slf4j.org/api/org/slf4j/Logger.html) in your code.
-    + SLF4Bukkit supports only [Bukkit formatting markers](http://rjenkinsjr.github.io/slf4bukkit/apidocs/info/ronjenkins/slf4bukkit/BukkitColorMarker.html), which format the entire message and associated throwable (if any). All other markers are discarded.
-    + In addition to using the Bukkit formatting markers, you can use Bukkit's `ChatColor` values to further format your message.
+    + SLF4Bukkit supports only [ColorMarkers](http://rjenkinsjr.github.io/slf4bukkit/apidocs/info/ronjenkins/slf4bukkit/ColorMarker.html), which format the entire message and associated throwable (if any). All other markers are discarded. ColorMarkers always override the default level-specific formatting defined in the plugin config.
+    + In addition to using ColorMarkers, you can use Bukkit's `ChatColor` values to further format your message.
     + SLF4Bukkit issues `ChatColor.RESET` after every log message, so you don't have to worry about resetting after each message.
+    + You can use the [ColorString](http://rjenkinsjr.github.io/slf4bukkit/apidocs/info/ronjenkins/slf4bukkit/ColorString.html) class to easily create colored log messages.

@@ -64,7 +64,7 @@ public class StaticLoggerBinder implements LoggerFactoryBinder {
   // to avoid constant folding by the compiler, this field must *not* be final
   public static String                    REQUESTED_API_VERSION = "1.6.99";                                 // !final
 
-  private static final String             loggerFactoryClassStr = BukkitPluginLoggerFactory.class.getName();
+  private static final String             loggerFactoryClassStr = BukkitLoggerFactory.class.getName();
 
   /**
    * The unique instance of this class.
@@ -78,7 +78,7 @@ public class StaticLoggerBinder implements LoggerFactoryBinder {
   private final ILoggerFactory            loggerFactory;
 
   private StaticLoggerBinder() {
-    this.loggerFactory = new BukkitPluginLoggerFactory();
+    this.loggerFactory = new BukkitLoggerFactory();
   }
 
   /**

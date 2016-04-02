@@ -187,14 +187,14 @@ import com.google.common.collect.ImmutableMap;
  * @author Peter Royal
  * @author Ronald Jack Jenkins Jr.
  */
-public final class BukkitPluginLoggerAdapter implements Logger {
+public final class BukkitLoggerAdapter implements Logger {
 
   // Plugin reference.
   private static transient Plugin              BUKKIT_PLUGIN;
   private static transient String              BUKKIT_PLUGIN_NAME;
   // Configuration parameters.
   private static final String                  CONFIG_FALLBACK_DEFAULT_LOG_LEVEL   = "info";
-  private static final Map<Level, ColorMarker> CONFIG_FALLBACK_LEVEL_COLORS        = BukkitPluginLoggerAdapter.fallbackLevelColors();
+  private static final Map<Level, ColorMarker> CONFIG_FALLBACK_LEVEL_COLORS        = BukkitLoggerAdapter.fallbackLevelColors();
   private static final boolean                 CONFIG_FALLBACK_SHOW_HEADER         = false;
   private static final boolean                 CONFIG_FALLBACK_SHOW_LOG_NAME       = false;
   private static final boolean                 CONFIG_FALLBACK_SHOW_SHORT_LOG_NAME = true;
@@ -221,7 +221,7 @@ public final class BukkitPluginLoggerAdapter implements Logger {
 
   // NOTE: BukkitPluginLoggerAdapter constructor should have only package access
   // so that only BukkitPluginLoggerFactory be able to create one.
-  BukkitPluginLoggerAdapter(final String name) {
+  BukkitLoggerAdapter(final String name) {
     this.name = name;
   }
 
@@ -234,23 +234,23 @@ public final class BukkitPluginLoggerAdapter implements Logger {
    *          reloading the plugin config.
    */
   public static void init(final boolean reinitialize) {
-    synchronized (BukkitPluginLoggerAdapter.INITIALIZATION_LOCK) {
+    synchronized (BukkitLoggerAdapter.INITIALIZATION_LOCK) {
       // Do not re-initialize unless requested.
       if (reinitialize) {
-        BukkitPluginLoggerAdapter.BUKKIT_PLUGIN = null;
-        BukkitPluginLoggerAdapter.BUKKIT_PLUGIN_NAME = null;
-      } else if (BukkitPluginLoggerAdapter.BUKKIT_PLUGIN != null) { return; }
+        BukkitLoggerAdapter.BUKKIT_PLUGIN = null;
+        BukkitLoggerAdapter.BUKKIT_PLUGIN_NAME = null;
+      } else if (BukkitLoggerAdapter.BUKKIT_PLUGIN != null) { return; }
       // Get a reference to the plugin in this classloader.
-      if (BukkitPluginLoggerAdapter.BUKKIT_PLUGIN_NAME == null) {
+      if (BukkitLoggerAdapter.BUKKIT_PLUGIN_NAME == null) {
         InputStream pluginYmlFile = null;
         try {
-          pluginYmlFile = BukkitPluginLoggerAdapter.class.getClassLoader()
+          pluginYmlFile = BukkitLoggerAdapter.class.getClassLoader()
                                                          .getResource("plugin.yml")
                                                          .openStream();
           final Yaml yaml = new Yaml();
           @SuppressWarnings("rawtypes")
           final Map pluginYml = (Map) yaml.load(pluginYmlFile);
-          BukkitPluginLoggerAdapter.BUKKIT_PLUGIN_NAME = (String) pluginYml.get("name");
+          BukkitLoggerAdapter.BUKKIT_PLUGIN_NAME = (String) pluginYml.get("name");
         } catch (final IOException e) {
           throw new IllegalStateException(e);
         } finally {
@@ -267,28 +267,28 @@ public final class BukkitPluginLoggerAdapter implements Logger {
       // uninitialized until this becomes non-null. While it is null, the Bukkit
       // server logger will be used instead of the plugin logger, and all
       // default configuration options will be used.
-      BukkitPluginLoggerAdapter.BUKKIT_PLUGIN = Bukkit.getPluginManager()
-                                                      .getPlugin(BukkitPluginLoggerAdapter.BUKKIT_PLUGIN_NAME);
+      BukkitLoggerAdapter.BUKKIT_PLUGIN = Bukkit.getPluginManager()
+                                                      .getPlugin(BukkitLoggerAdapter.BUKKIT_PLUGIN_NAME);
       // Get the configuration values.
       // 1. Look in the plugin's on-disk config.
       // 2. If the value is absent, use the plugin's built-in config.
       // 3. If the value is absent, use the default values hardcoded above.
       // (1 and 2 are handled by using the Bukkit API.)
-      BukkitPluginLoggerAdapter.CONFIG_VALUE_DEFAULT_LOG_LEVEL = BukkitPluginLoggerAdapter.stringToLevel(BukkitPluginLoggerAdapter.getStringProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_DEFAULT_LOG_LEVEL,
-                                                                                                                                                     BukkitPluginLoggerAdapter.CONFIG_FALLBACK_DEFAULT_LOG_LEVEL));
-      if (BukkitPluginLoggerAdapter.CONFIG_VALUE_DEFAULT_LOG_LEVEL == null) {
-        BukkitPluginLoggerAdapter.CONFIG_VALUE_DEFAULT_LOG_LEVEL = BukkitPluginLoggerAdapter.stringToLevel(BukkitPluginLoggerAdapter.CONFIG_FALLBACK_DEFAULT_LOG_LEVEL);
+      BukkitLoggerAdapter.CONFIG_VALUE_DEFAULT_LOG_LEVEL = BukkitLoggerAdapter.stringToLevel(BukkitLoggerAdapter.getStringProperty(BukkitLoggerAdapter.CONFIG_KEY_DEFAULT_LOG_LEVEL,
+                                                                                                                                                     BukkitLoggerAdapter.CONFIG_FALLBACK_DEFAULT_LOG_LEVEL));
+      if (BukkitLoggerAdapter.CONFIG_VALUE_DEFAULT_LOG_LEVEL == null) {
+        BukkitLoggerAdapter.CONFIG_VALUE_DEFAULT_LOG_LEVEL = BukkitLoggerAdapter.stringToLevel(BukkitLoggerAdapter.CONFIG_FALLBACK_DEFAULT_LOG_LEVEL);
       }
-      BukkitPluginLoggerAdapter.CONFIG_VALUE_LEVEL_COLORS = BukkitPluginLoggerAdapter.getLevelColorsMap(BukkitPluginLoggerAdapter.CONFIG_KEY_LEVEL_COLORS,
-                                                                                                        BukkitPluginLoggerAdapter.CONFIG_FALLBACK_LEVEL_COLORS);
-      BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_HEADER = BukkitPluginLoggerAdapter.getBooleanProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_SHOW_HEADER,
-                                                                                                        BukkitPluginLoggerAdapter.CONFIG_FALLBACK_SHOW_HEADER);
-      BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_LOG_NAME = BukkitPluginLoggerAdapter.getBooleanProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_SHOW_LOG_NAME,
-                                                                                                          BukkitPluginLoggerAdapter.CONFIG_FALLBACK_SHOW_LOG_NAME);
-      BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_SHORT_LOG_NAME = BukkitPluginLoggerAdapter.getBooleanProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_SHOW_SHORT_LOG_NAME,
-                                                                                                                BukkitPluginLoggerAdapter.CONFIG_FALLBACK_SHOW_SHORT_LOG_NAME);
-      BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_THREAD_NAME = BukkitPluginLoggerAdapter.getBooleanProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_SHOW_THREAD_NAME,
-                                                                                                             BukkitPluginLoggerAdapter.CONFIG_FALLBACK_SHOW_THREAD_NAME);
+      BukkitLoggerAdapter.CONFIG_VALUE_LEVEL_COLORS = BukkitLoggerAdapter.getLevelColorsMap(BukkitLoggerAdapter.CONFIG_KEY_LEVEL_COLORS,
+                                                                                                        BukkitLoggerAdapter.CONFIG_FALLBACK_LEVEL_COLORS);
+      BukkitLoggerAdapter.CONFIG_VALUE_SHOW_HEADER = BukkitLoggerAdapter.getBooleanProperty(BukkitLoggerAdapter.CONFIG_KEY_SHOW_HEADER,
+                                                                                                        BukkitLoggerAdapter.CONFIG_FALLBACK_SHOW_HEADER);
+      BukkitLoggerAdapter.CONFIG_VALUE_SHOW_LOG_NAME = BukkitLoggerAdapter.getBooleanProperty(BukkitLoggerAdapter.CONFIG_KEY_SHOW_LOG_NAME,
+                                                                                                          BukkitLoggerAdapter.CONFIG_FALLBACK_SHOW_LOG_NAME);
+      BukkitLoggerAdapter.CONFIG_VALUE_SHOW_SHORT_LOG_NAME = BukkitLoggerAdapter.getBooleanProperty(BukkitLoggerAdapter.CONFIG_KEY_SHOW_SHORT_LOG_NAME,
+                                                                                                                BukkitLoggerAdapter.CONFIG_FALLBACK_SHOW_SHORT_LOG_NAME);
+      BukkitLoggerAdapter.CONFIG_VALUE_SHOW_THREAD_NAME = BukkitLoggerAdapter.getBooleanProperty(BukkitLoggerAdapter.CONFIG_KEY_SHOW_THREAD_NAME,
+                                                                                                             BukkitLoggerAdapter.CONFIG_FALLBACK_SHOW_THREAD_NAME);
     }
   }
 
@@ -320,9 +320,9 @@ public final class BukkitPluginLoggerAdapter implements Logger {
    */
   private static boolean getBooleanProperty(final String name,
                                             final boolean defaultValue) {
-    synchronized (BukkitPluginLoggerAdapter.INITIALIZATION_LOCK) {
-      if (BukkitPluginLoggerAdapter.BUKKIT_PLUGIN == null) { return defaultValue; }
-      final String prop = BukkitPluginLoggerAdapter.BUKKIT_PLUGIN.getConfig()
+    synchronized (BukkitLoggerAdapter.INITIALIZATION_LOCK) {
+      if (BukkitLoggerAdapter.BUKKIT_PLUGIN == null) { return defaultValue; }
+      final String prop = BukkitLoggerAdapter.BUKKIT_PLUGIN.getConfig()
                                                                  .getString(name);
       if ("true".equalsIgnoreCase(prop)) { return true; }
       if ("false".equalsIgnoreCase(prop)) { return false; }
@@ -337,9 +337,9 @@ public final class BukkitPluginLoggerAdapter implements Logger {
    *         logger. Never null.
    */
   private static java.util.logging.Logger getBukkitLogger() {
-    synchronized (BukkitPluginLoggerAdapter.INITIALIZATION_LOCK) {
-      return BukkitPluginLoggerAdapter.BUKKIT_PLUGIN == null ? Bukkit.getLogger()
-                                                            : BukkitPluginLoggerAdapter.BUKKIT_PLUGIN.getLogger();
+    synchronized (BukkitLoggerAdapter.INITIALIZATION_LOCK) {
+      return BukkitLoggerAdapter.BUKKIT_PLUGIN == null ? Bukkit.getLogger()
+                                                            : BukkitLoggerAdapter.BUKKIT_PLUGIN.getLogger();
     }
   }
 
@@ -361,10 +361,10 @@ public final class BukkitPluginLoggerAdapter implements Logger {
   private static Map<Level, ColorMarker>
       getLevelColorsMap(final String property,
                         final Map<Level, ColorMarker> defaultValues) {
-    synchronized (BukkitPluginLoggerAdapter.INITIALIZATION_LOCK) {
+    synchronized (BukkitLoggerAdapter.INITIALIZATION_LOCK) {
       // Check for the plugin.
-      if (BukkitPluginLoggerAdapter.BUKKIT_PLUGIN == null) { return defaultValues; }
-      final ConfigurationSection config = BukkitPluginLoggerAdapter.BUKKIT_PLUGIN.getConfig()
+      if (BukkitLoggerAdapter.BUKKIT_PLUGIN == null) { return defaultValues; }
+      final ConfigurationSection config = BukkitLoggerAdapter.BUKKIT_PLUGIN.getConfig()
                                                                                  .getConfigurationSection(property);
       // Quit if the config isn't specified.
       if (config == null) { return defaultValues; }
@@ -408,9 +408,9 @@ public final class BukkitPluginLoggerAdapter implements Logger {
    */
   private static String getStringProperty(final String name,
                                           final String defaultValue) {
-    synchronized (BukkitPluginLoggerAdapter.INITIALIZATION_LOCK) {
-      if (BukkitPluginLoggerAdapter.BUKKIT_PLUGIN == null) { return defaultValue; }
-      final String prop = BukkitPluginLoggerAdapter.BUKKIT_PLUGIN.getConfig()
+    synchronized (BukkitLoggerAdapter.INITIALIZATION_LOCK) {
+      if (BukkitLoggerAdapter.BUKKIT_PLUGIN == null) { return defaultValue; }
+      final String prop = BukkitLoggerAdapter.BUKKIT_PLUGIN.getConfig()
                                                                  .getString(name);
       return (prop == null) ? defaultValue : prop;
     }
@@ -874,13 +874,13 @@ public final class BukkitPluginLoggerAdapter implements Logger {
     int indexOfLastDot = tempName.length();
     while ((level == null) && (indexOfLastDot > -1)) {
       tempName = tempName.substring(0, indexOfLastDot);
-      level = BukkitPluginLoggerAdapter.stringToLevel(BukkitPluginLoggerAdapter.getStringProperty(BukkitPluginLoggerAdapter.CONFIG_KEY_PREFIX_LOG
+      level = BukkitLoggerAdapter.stringToLevel(BukkitLoggerAdapter.getStringProperty(BukkitLoggerAdapter.CONFIG_KEY_PREFIX_LOG
                                                                                                       + tempName,
                                                                                                   null));
       indexOfLastDot = String.valueOf(tempName).lastIndexOf(".");
     }
     // Return the default value if we got null.
-    return (level == null) ? BukkitPluginLoggerAdapter.CONFIG_VALUE_DEFAULT_LOG_LEVEL
+    return (level == null) ? BukkitLoggerAdapter.CONFIG_VALUE_DEFAULT_LOG_LEVEL
                           : level;
   }
 
@@ -936,7 +936,7 @@ public final class BukkitPluginLoggerAdapter implements Logger {
     // Ensure that SLF4Bukkit is initialized. Every public API call passes
     // through this method, so this is the appropriate place to ensure
     // initialization.
-    BukkitPluginLoggerAdapter.init(false);
+    BukkitLoggerAdapter.init(false);
     // log level are numerically ordered so can use simple numeric comparison
     //
     // the PLUGIN.getLogger().isLoggable() check avoids the unconditional
@@ -945,7 +945,7 @@ public final class BukkitPluginLoggerAdapter implements Logger {
     // http://jira.qos.ch/browse/SLF4J-81
     final Level currentLogLevel = this.determineCurrentLevel();
     return (logLevel.toInt() >= currentLogLevel.toInt())
-           && (BukkitPluginLoggerAdapter.getBukkitLogger().isLoggable(BukkitPluginLoggerAdapter.slf4jLevelIntToBukkitJULLevel(logLevel)));
+           && (BukkitLoggerAdapter.getBukkitLogger().isLoggable(BukkitLoggerAdapter.slf4jLevelIntToBukkitJULLevel(logLevel)));
   }
 
   /**
@@ -964,11 +964,11 @@ public final class BukkitPluginLoggerAdapter implements Logger {
   private void log(final Level level, final Marker marker,
                    final String message, final Throwable throwable) {
     final java.util.logging.Logger logger;
-    synchronized (BukkitPluginLoggerAdapter.INITIALIZATION_LOCK) {
+    synchronized (BukkitLoggerAdapter.INITIALIZATION_LOCK) {
       // Ensure that the logger will accept this request.
       if (!this.isLevelEnabled(level)) { return; }
       // Determine which logger will be used.
-      logger = BukkitPluginLoggerAdapter.getBukkitLogger();
+      logger = BukkitLoggerAdapter.getBukkitLogger();
     }
 
     // Start building the log message.
@@ -980,12 +980,12 @@ public final class BukkitPluginLoggerAdapter implements Logger {
     if (marker instanceof ColorMarker) {
       buf.append(((ColorMarker) marker).getValue());
     } else {
-      buf.append(BukkitPluginLoggerAdapter.CONFIG_VALUE_LEVEL_COLORS.get(level)
+      buf.append(BukkitLoggerAdapter.CONFIG_VALUE_LEVEL_COLORS.get(level)
                                                                     .getValue());
     }
 
     // Indicate that this message comes from SLF4J, if desired.
-    if (BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_HEADER) {
+    if (BukkitLoggerAdapter.CONFIG_VALUE_SHOW_HEADER) {
       hasHeader = true;
       buf.append("[SLF4J]");
     }
@@ -1006,7 +1006,7 @@ public final class BukkitPluginLoggerAdapter implements Logger {
     }
 
     // Append the current thread name, if desired.
-    if (BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_THREAD_NAME) {
+    if (BukkitLoggerAdapter.CONFIG_VALUE_SHOW_THREAD_NAME) {
       hasHeader = true;
       buf.append('[');
       buf.append(Thread.currentThread().getName());
@@ -1019,9 +1019,9 @@ public final class BukkitPluginLoggerAdapter implements Logger {
     }
 
     // Append the name of the log instance, if desired.
-    if (BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_LOG_NAME) {
+    if (BukkitLoggerAdapter.CONFIG_VALUE_SHOW_LOG_NAME) {
       buf.append('{').append(this.name).append("} ");
-    } else if (BukkitPluginLoggerAdapter.CONFIG_VALUE_SHOW_SHORT_LOG_NAME) {
+    } else if (BukkitLoggerAdapter.CONFIG_VALUE_SHOW_SHORT_LOG_NAME) {
       if (this.shortLogName == null) {
         this.shortLogName = this.computeShortName();
       }
@@ -1041,7 +1041,7 @@ public final class BukkitPluginLoggerAdapter implements Logger {
     buf.append(ChatColor.RESET);
 
     // Log the message.
-    logger.log(BukkitPluginLoggerAdapter.slf4jLevelIntToBukkitJULLevel(level),
+    logger.log(BukkitLoggerAdapter.slf4jLevelIntToBukkitJULLevel(level),
                ColorMapper.map(buf.toString()));
   }
 }

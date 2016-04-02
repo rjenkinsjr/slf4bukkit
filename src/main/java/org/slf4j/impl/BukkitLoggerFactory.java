@@ -52,23 +52,23 @@ import org.slf4j.Logger;
 
 /**
  * An implementation of {@link ILoggerFactory} which always returns
- * {@link BukkitPluginLoggerAdapter} instances.
+ * {@link BukkitLoggerAdapter} instances.
  *
  * @author Ceki G&uuml;lc&uuml;
  * @author Ronald Jack Jenkins Jr.
  */
-public class BukkitPluginLoggerFactory implements ILoggerFactory {
+public class BukkitLoggerFactory implements ILoggerFactory {
 
   ConcurrentMap<String, Logger> loggerMap;
 
-  public BukkitPluginLoggerFactory() {
+  public BukkitLoggerFactory() {
     this.loggerMap = new ConcurrentHashMap<String, Logger>();
     // ensure jul initialization. see also SLF4J-359
     java.util.logging.LogManager.getLogManager();
   }
 
   /**
-   * Return an appropriate {@link BukkitPluginLoggerAdapter} instance by name.
+   * Return an appropriate {@link BukkitLoggerAdapter} instance by name.
    */
   @Override
   public Logger getLogger(final String name) {
@@ -76,7 +76,7 @@ public class BukkitPluginLoggerFactory implements ILoggerFactory {
     if (bukkitLogger != null) {
       return bukkitLogger;
     } else {
-      final Logger newInstance = new BukkitPluginLoggerAdapter(name);
+      final Logger newInstance = new BukkitLoggerAdapter(name);
       final Logger oldInstance = this.loggerMap.putIfAbsent(name, newInstance);
       return oldInstance == null ? newInstance : oldInstance;
     }

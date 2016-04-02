@@ -41,3 +41,4 @@ If you wish to use [SLF4J](http://slf4j.org) in your Bukkit plugin, or if your p
     + In addition to using ColorMarkers, you can use Bukkit's `ChatColor` values to further format your message.
     + SLF4Bukkit issues `ChatColor.RESET` after every log message, so you don't have to worry about resetting after each message.
     + You can use the [ColorString](${project.url}/apidocs/info/ronjenkins/slf4bukkit/ColorString.html) class to easily create colored log messages.
+    + For a consistent user experience, it's recommended that you perform all logging via SLF4Bukkit and not use `Plugin.getLogger()`.

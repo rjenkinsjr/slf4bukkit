@@ -15,12 +15,11 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses />.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>info.ronjenkins</groupId>
   <artifactId>slf4bukkit</artifactId>
-  <version>0.1.4-SNAPSHOT</version>
+  <version>0.1.4</version>
   <name>SLF4Bukkit</name>
   <description>${project.name} is an SLF4J binding that uses Bukkit's plugin logging system.</description>
   <url>http://rjenkinsjr.github.io/slf4bukkit</url>
@@ -42,6 +41,7 @@
     <connection>scm:git:git://github.com/rjenkinsjr/slf4bukkit.git</connection>
     <developerConnection>scm:git:git@github.com:rjenkinsjr/slf4bukkit.git</developerConnection>
     <url>https://github.com/rjenkinsjr/slf4bukkit</url>
+    <tag>0.1.4</tag>
   </scm>
   <licenses>
     <license>

@@ -31,7 +31,7 @@ If you wish to use [SLF4J](http://slf4j.org) in your Bukkit plugin, or if your p
 <dependency>
   <groupId>info.ronjenkins</groupId>
   <artifactId>slf4bukkit</artifactId>
-  <version>0.1.3</version>
+  <version>0.1.4</version>
 </dependency>
 ```
 

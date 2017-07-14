@@ -44,16 +44,10 @@
  */
 package org.slf4j.impl;
 
+import com.google.common.collect.ImmutableMap;
+
 import info.ronjenkins.slf4bukkit.ColorMapper;
 import info.ronjenkins.slf4bukkit.ColorMarker;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.bukkit.Bukkit;
@@ -67,7 +61,13 @@ import org.slf4j.helpers.FormattingTuple;
 import org.slf4j.helpers.MessageFormatter;
 import org.yaml.snakeyaml.Yaml;
 
-import com.google.common.collect.ImmutableMap;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -219,11 +219,22 @@ public final class BukkitLoggerAdapter implements Logger {
   private final String                         name;
   // The short name of this simple log instance
   private transient String                     shortLogName                        = null;
+  private final ThreadLocal<ColorMapper>                    mapper;
 
   // NOTE: BukkitPluginLoggerAdapter constructor should have only package access
   // so that only BukkitPluginLoggerFactory be able to create one.
   BukkitLoggerAdapter(final String name) {
     this.name = name;
+    this.mapper = new ThreadLocal<ColorMapper>() {
+      @Override
+      protected ColorMapper initialValue() {
+        try {
+          return ColorMapper.create();
+        } catch (ColorMapper.UnsupportedByBukkitImplementationException ignore) {
+          return null;
+        }
+      }
+    };
   }
 
   /**
@@ -352,7 +363,7 @@ public final class BukkitLoggerAdapter implements Logger {
    *
    * @param property
    *          the config property where the map exists.
-   * @param defaultValue
+   * @param defaultValues
    *          the fallback values returned by this method.
    * @return never null, always contains one mapping for each {@link Level}, and
    *         contains no null keys/values. Equal to {@code defaultValue} if the
@@ -1043,6 +1054,14 @@ public final class BukkitLoggerAdapter implements Logger {
 
     // Log the message.
     logger.log(BukkitLoggerAdapter.slf4jLevelIntToBukkitJULLevel(level),
-               ColorMapper.map(buf.toString()));
+               mapColors(buf.toString()));
+  }
+
+  private String mapColors(String input) {
+    ColorMapper colorMapper = mapper.get();
+    if (colorMapper != null) {
+      return colorMapper.map(input);
+    }
+    return input;
   }
 }

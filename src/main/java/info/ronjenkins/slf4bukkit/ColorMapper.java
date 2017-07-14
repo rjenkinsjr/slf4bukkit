@@ -16,13 +16,13 @@
  */
 package info.ronjenkins.slf4bukkit;
 
-import java.util.Map;
+import com.google.common.collect.ImmutableMap;
 
 import org.bukkit.ChatColor;
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.Ansi.Attribute;
 
-import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 
 /**
  * Utility class that maps {@link ChatColor} values to their JAnsi equivalents,
@@ -32,8 +32,11 @@ import com.google.common.collect.ImmutableMap;
  */
 public final class ColorMapper {
 
+  private ColorMapper() {
+  }
+
   // @formatter:off
-  private static final Map<ChatColor, String> MAP = ImmutableMap.<ChatColor, String>builder()
+  private final Map<ChatColor, String> MAP = ImmutableMap.<ChatColor, String>builder()
     .put(ChatColor.BLACK, Ansi.ansi().a(Attribute.RESET).fg(Ansi.Color.BLACK).boldOff().toString())
     .put(ChatColor.DARK_BLUE, Ansi.ansi().a(Attribute.RESET).fg(Ansi.Color.BLUE).boldOff().toString())
     .put(ChatColor.DARK_GREEN, Ansi.ansi().a(Attribute.RESET).fg(Ansi.Color.GREEN).boldOff().toString())
@@ -60,19 +63,46 @@ public final class ColorMapper {
   // @formatter:on
 
   /**
+   * Attempts to create a new ColorMapper.
+   *
+   * @return a new ColorMapper instance
+   * @throws UnsupportedByBukkitImplementationException if colorMapping is not supported on the BukkitImplementation on
+   *                                                    which this method is called
+   */
+  public static ColorMapper create() throws UnsupportedByBukkitImplementationException {
+    try {
+      return new ColorMapper();
+    } catch (Throwable e) {
+      throw new UnsupportedByBukkitImplementationException(e);
+    }
+
+  }
+
+  /**
    * Translates {@link ChatColor} directives to their JAnsi equivalents.
    *
-   * @param input
-   *          null is coerced to the empty string.
+   * @param input null is coerced to the empty string.
    * @return never null.
    */
-  public static String map(final String input) {
-    if (input == null) { return ""; }
+  public String map(final String input) {
+    if (input == null) {
+      return "";
+    }
     String output = input;
-    for (final Map.Entry<ChatColor, String> mapping : ColorMapper.MAP.entrySet()) {
+    for (final Map.Entry<ChatColor, String> mapping : MAP.entrySet()) {
       output = output.replace(mapping.getKey().toString(), mapping.getValue());
     }
     return output;
+  }
+
+  /**
+   * Thrown when an operation is not supported by the Bukkit implementation the operation runs on.
+   */
+  public static class UnsupportedByBukkitImplementationException extends Exception {
+
+    private UnsupportedByBukkitImplementationException(Throwable e) {
+      super(e);
+    }
   }
 
 }

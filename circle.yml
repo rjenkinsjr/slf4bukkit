@@ -6,6 +6,10 @@ dependencies:
   override:
     - exit 0 # Handled during CircleCI compile phase.
 
+compile:
+  override:
+    - mvn
+
 test:
   override:
     - exit 0 # Handled during CircleCI compile phase.

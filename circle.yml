@@ -4,15 +4,11 @@ machine:
 
 dependencies:
   override:
-    - exit 0 # Handled during CircleCI compile phase.
-
-compile:
-  override:
-    - mvn -V
+    - mvn -V -DskipTests clean install dependency:resolve-plugins dependency:go-offline
 
 test:
   override:
-    - exit 0 # Handled during CircleCI compile phase.
+    - exit # We don't have any tests right now.
 
 deployment:
   production:

@@ -29,7 +29,6 @@
     <maven.compiler.source>1.7</maven.compiler.source>
     <maven.compiler.target>1.7</maven.compiler.target>
     <maven.javadoc.version>2.10.3</maven.javadoc.version>
-    <sonar.java.source>${maven.compiler.source}</sonar.java.source>
     <rtr.allowExternalSnapshots>true</rtr.allowExternalSnapshots>
     <site.src>${project.basedir}/src/site</site.src>
     <site.dest>${project.basedir}/target/site-src</site.dest>
@@ -143,26 +142,6 @@
         </executions>
       </plugin>
     </plugins>
-    <!-- Plugins used by profiles. -->
-    <pluginManagement>
-      <plugins>
-        <!-- SonarQube analysis. -->
-        <plugin>
-          <groupId>org.sonarsource.scanner.maven</groupId>
-          <artifactId>sonar-maven-plugin</artifactId>
-          <version>3.0.1</version>
-          <executions>
-            <execution>
-              <id>sonarqube-analysis</id>
-              <phase>verify</phase>
-              <goals>
-                <goal>sonar</goal>
-              </goals>
-            </execution>
-          </executions>
-        </plugin>
-      </plugins>
-    </pluginManagement>
   </build>
   <!-- Manages site/report configuration. -->
   <reporting>
@@ -254,23 +233,6 @@
     </plugins>
   </reporting>
   <profiles>
-    <!-- SonarQube analysis profile. -->
-    <profile>
-      <id>sonarqube</id>
-      <activation>
-        <property>
-          <name>sonar.host.url</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.sonarsource.scanner.maven</groupId>
-            <artifactId>sonar-maven-plugin</artifactId>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
     <!-- Things to do only for releases. -->
     <profile>
       <id>release</id>
@@ -335,11 +297,6 @@
                 </goals>
               </execution>
             </executions>
-          </plugin>
-          <!-- SonarQube analysis. -->
-          <plugin>
-            <groupId>org.sonarsource.scanner.maven</groupId>
-            <artifactId>sonar-maven-plugin</artifactId>
           </plugin>
           <!-- Deploy the Maven artifacts to a local directory for publishing to GitHub. -->
           <plugin>

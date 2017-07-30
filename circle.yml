@@ -8,7 +8,7 @@ dependencies:
 
 compile:
   override:
-    - mvn
+    - mvn -V
 
 test:
   override:

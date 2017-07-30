@@ -1,0 +1,18 @@
+machine:
+  java:
+    version: oraclejdk7
+
+dependencies:
+  override:
+    - exit 0 # Handled during compile phase.
+
+test:
+  override:
+    - exit 0 # Handled during compile phase.
+
+deployment:
+  production:
+    branch: production # TBD
+    commands:
+      - mvn -Drtr.disabled=true clean
+      - mvn -s settings.xml -Drtr.release=true

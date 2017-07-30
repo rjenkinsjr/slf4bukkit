@@ -4,11 +4,11 @@ machine:
 
 dependencies:
   override:
-    - exit 0 # Handled during compile phase.
+    - exit 0 # Handled during CircleCI compile phase.
 
 test:
   override:
-    - exit 0 # Handled during compile phase.
+    - exit 0 # Handled during CircleCI compile phase.
 
 deployment:
   production:

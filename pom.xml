@@ -255,6 +255,25 @@
       <build>
         <defaultGoal>clean deploy site-deploy</defaultGoal>
         <plugins>
+          <!-- Write POM version to properties file. -->
+          <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <version>1.8</version>
+            <executions>
+              <execution>
+                <id>write-properties-file</id>
+                <phase>initialize</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <echo message="${project.version}" file="${project.basedir}/.version" />
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
           <!-- Generate source JAR. -->
           <plugin>
             <artifactId>maven-source-plugin</artifactId>

@@ -19,5 +19,7 @@ deployment:
   production:
     branch: master
     commands:
-      - mvn -Drtr.disabled=true clean
+      - mvn clean
       - mvn -s settings.xml -Drtr.release=true
+      - git tag $(cat .version)
+      - git push origin $(cat .version)

@@ -4,7 +4,7 @@ machine:
 
 dependencies:
   pre:
-    - wget https://archive.apache.org/dist/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
+    - wget -nv https://archive.apache.org/dist/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
     - sudo tar -zxf apache-maven-3.3.9-bin.tar.gz -C /usr/local/
     - rm apache-maven-3.3.9-bin.tar.gz
     - sudo ln -sfn /usr/local/apache-maven-3.3.9 /usr/local/apache-maven

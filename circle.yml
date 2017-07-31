@@ -17,7 +17,7 @@ test:
 
 deployment:
   production:
-    branch: production # TBD
+    branch: master
     commands:
       - mvn -Drtr.disabled=true clean
       - mvn -s settings.xml -Drtr.release=true

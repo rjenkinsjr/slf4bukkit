@@ -16,7 +16,7 @@ test:
     - exit # We don't have any tests right now.
 
 deployment:
-  production:
+  master:
     branch: master
     commands:
       - mvn clean

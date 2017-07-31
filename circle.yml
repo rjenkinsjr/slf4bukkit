@@ -11,7 +11,7 @@ dependencies:
   override:
     - mvn -V -DskipTests clean install dependency:resolve-plugins dependency:go-offline
   post:
-    - sh ./env.sh
+    - bash ./env.sh
 
 test:
   override:
@@ -21,4 +21,4 @@ deployment:
   master:
     branch: master
     commands:
-      - sh ./deploy.sh
+      - bash ./deploy.sh

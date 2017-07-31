@@ -6,12 +6,12 @@
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
-  
+
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses />.
 -->
@@ -20,7 +20,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>info.ronjenkins</groupId>
   <artifactId>slf4bukkit</artifactId>
-  <version>0.1.5-SNAPSHOT</version>
+  <version>0.1.6-SNAPSHOT</version>
   <name>SLF4Bukkit</name>
   <description>${project.name} is an SLF4J binding that uses Bukkit's plugin logging system.</description>
   <url>http://rjenkinsjr.github.io/slf4bukkit</url>
@@ -29,7 +29,6 @@
     <maven.compiler.source>1.7</maven.compiler.source>
     <maven.compiler.target>1.7</maven.compiler.target>
     <maven.javadoc.version>2.10.3</maven.javadoc.version>
-    <sonar.java.source>${maven.compiler.source}</sonar.java.source>
     <rtr.allowExternalSnapshots>true</rtr.allowExternalSnapshots>
     <site.src>${project.basedir}/src/site</site.src>
     <site.dest>${project.basedir}/target/site-src</site.dest>
@@ -51,6 +50,12 @@
     </license>
   </licenses>
   <!-- Dependencies -->
+  <repositories>
+    <repository>
+      <id>spigot-repo</id>
+      <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+    </repository>
+  </repositories>
   <dependencies>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -143,26 +148,6 @@
         </executions>
       </plugin>
     </plugins>
-    <!-- Plugins used by profiles. -->
-    <pluginManagement>
-      <plugins>
-        <!-- SonarQube analysis. -->
-        <plugin>
-          <groupId>org.sonarsource.scanner.maven</groupId>
-          <artifactId>sonar-maven-plugin</artifactId>
-          <version>3.0.1</version>
-          <executions>
-            <execution>
-              <id>sonarqube-analysis</id>
-              <phase>verify</phase>
-              <goals>
-                <goal>sonar</goal>
-              </goals>
-            </execution>
-          </executions>
-        </plugin>
-      </plugins>
-    </pluginManagement>
   </build>
   <!-- Manages site/report configuration. -->
   <reporting>
@@ -254,32 +239,9 @@
     </plugins>
   </reporting>
   <profiles>
-    <!-- SonarQube analysis profile. -->
-    <profile>
-      <id>sonarqube</id>
-      <activation>
-        <property>
-          <name>sonar.host.url</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.sonarsource.scanner.maven</groupId>
-            <artifactId>sonar-maven-plugin</artifactId>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
     <!-- Things to do only for releases. -->
     <profile>
       <id>release</id>
-      <activation>
-        <property>
-          <name>rtr.release</name>
-          <value>true</value>
-        </property>
-      </activation>
       <!-- TODO: uncomment once we reach 1.0.0 -->
       <!--properties>
         <site.profile>production</site.profile>
@@ -300,9 +262,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <propertyfile file="${project.basedir}/version.properties">
-                      <entry key="RELEASE_POM_VERSION" value="${project.version}" />
-                    </propertyfile>
+                    <echo message="${project.version}" file="${project.basedir}/.version" />
                   </target>
                 </configuration>
               </execution>
@@ -336,18 +296,13 @@
               </execution>
             </executions>
           </plugin>
-          <!-- SonarQube analysis. -->
-          <plugin>
-            <groupId>org.sonarsource.scanner.maven</groupId>
-            <artifactId>sonar-maven-plugin</artifactId>
-          </plugin>
           <!-- Deploy the Maven artifacts to a local directory for publishing to GitHub. -->
           <plugin>
             <artifactId>maven-deploy-plugin</artifactId>
             <version>2.8.2</version>
             <configuration>
               <altDeploymentRepository>
-                internal.repo::default::file://${maven2.repo.dir} 
+                internal.repo::default::file://${maven2.repo.dir}
               </altDeploymentRepository>
             </configuration>
           </plugin>

@@ -21,6 +21,8 @@ deployment:
     commands:
       - mvn clean
       - mvn -s settings.xml -Drtr.release=true
+      - git config --global user.email "me@ronjenkins.info"
+      - git config --global user.name "Ronald Jack Jenkins Jr."
       - git add pom.xml
       - git commit -m "Committing release $(cat .version)"
       - git tag $(cat .version)

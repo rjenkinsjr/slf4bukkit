@@ -21,5 +21,8 @@ deployment:
     commands:
       - mvn clean
       - mvn -s settings.xml -Drtr.release=true
+      - git add pom.xml
+      - git commit -m "Committing release $(cat .version)"
+      - git push
       - git tag $(cat .version)
       - git push origin $(cat .version)

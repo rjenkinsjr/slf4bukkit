@@ -3,9 +3,8 @@ set -e
 
 mvn clean
 
-set -o allexport
 source .env
-set +o allexport
+sed -i -e "s/GMSP_OAUTHTOKEN/${GMSP_OAUTHTOKEN}/" settings.xml
 rm .env
 
 mvn -s settings.xml -Drtr.release=true -P release

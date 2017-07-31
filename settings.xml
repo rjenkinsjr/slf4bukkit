@@ -6,7 +6,7 @@
     <!-- GitHub site deployment. -->
     <server>
       <id>github</id>
-      <password>${env.GMSP_OAUTHTOKEN}</password>
+      <password>GMSP_OAUTHTOKEN</password>
     </server>
   </servers>
 </settings>

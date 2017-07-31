@@ -10,6 +10,8 @@ dependencies:
     - sudo ln -sfn /usr/local/apache-maven-3.3.9 /usr/local/apache-maven
   override:
     - mvn -V -DskipTests clean install dependency:resolve-plugins dependency:go-offline
+  post:
+    - ./env.sh
 
 test:
   override:
@@ -19,11 +21,4 @@ deployment:
   master:
     branch: master
     commands:
-      - mvn clean
-      - mvn -s settings.xml -Drtr.release=true -P release
-      - git config --global user.email "me@ronjenkins.info"
-      - git config --global user.name "Ronald Jack Jenkins Jr."
-      - git add pom.xml
-      - git commit -m "Committing release $(cat .version)"
-      - git tag $(cat .version)
-      - git push origin $(cat .version)
+      - ./deploy.sh

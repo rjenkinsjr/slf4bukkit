@@ -5,9 +5,8 @@ mvn clean
 
 source .env
 sed -i -e "s/GMSP_OAUTHTOKEN/${GMSP_OAUTHTOKEN}/" settings.xml
-rm .env
 
-mvn -s settings.xml -Drtr.release=true -P release
+mvn -s ./settings.xml -Drtr.release=true -P release
 
 git config --global user.email "me@ronjenkins.info"
 git config --global user.name "Ronald Jack Jenkins Jr."

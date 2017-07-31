@@ -1,15 +1,13 @@
 machine:
   java:
     version: oraclejdk7
-  environment:
-    PATH: "~/maven/bin:${PATH}"
 
 dependencies:
   pre:
     - wget https://archive.apache.org/dist/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
-    - tar -xvzf apache-maven-3.3.9-bin.tar.gz
+    - sudo tar -zxf apache-maven-3.3.9-bin.tar.gz -C /usr/local/
     - rm apache-maven-3.3.9-bin.tar.gz
-    - mv apache-maven-3.3.9 maven
+    - sudo ln -s /usr/local/apache-maven-3.3.9/bin/mvn /usr/bin/mvn
   override:
     - mvn -V -DskipTests clean install dependency:resolve-plugins dependency:go-offline
 

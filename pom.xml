@@ -242,12 +242,6 @@
     <!-- Things to do only for releases. -->
     <profile>
       <id>release</id>
-      <activation>
-        <property>
-          <name>rtr.release</name>
-          <value>true</value>
-        </property>
-      </activation>
       <!-- TODO: uncomment once we reach 1.0.0 -->
       <!--properties>
         <site.profile>production</site.profile>

@@ -20,9 +20,10 @@ deployment:
     branch: master
     commands:
       - mvn clean
-      - mvn -s settings.xml -Drtr.release=true
+      - mvn -s settings.xml -Drtr.release=true -P release
+      - git config --global user.email "me@ronjenkins.info"
+      - git config --global user.name "Ronald Jack Jenkins Jr."
       - git add pom.xml
       - git commit -m "Committing release $(cat .version)"
-      - git push
       - git tag $(cat .version)
       - git push origin $(cat .version)

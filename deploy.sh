@@ -14,7 +14,8 @@ git config --global user.name "Ronald Jack Jenkins Jr."
 POM_VERSION=$(cat .version | xargs)
 
 git add pom.xml README.md
-git commit -m "Committing release $POM_VERSION"
+git commit -m "Committing release $POM_VERSION [skip ci]"
+git push
 
 git tag "$POM_VERSION"
 git push origin "$POM_VERSION"

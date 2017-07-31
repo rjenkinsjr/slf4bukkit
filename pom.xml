@@ -20,7 +20,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>info.ronjenkins</groupId>
   <artifactId>slf4bukkit</artifactId>
-  <version>0.2.0-SNAPSHOT</version>
+  <version>0.1.5-SNAPSHOT</version>
   <name>SLF4Bukkit</name>
   <description>${project.name} is an SLF4J binding that uses Bukkit's plugin logging system.</description>
   <url>http://rjenkinsjr.github.io/slf4bukkit</url>

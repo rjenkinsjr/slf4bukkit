@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+
 mvn clean
 
 set -o allexport

@@ -25,17 +25,27 @@ import org.fusesource.jansi.Ansi.Attribute;
 import java.util.Map;
 
 /**
- * Maps {@link ChatColor} values to their JAnsi equivalents.
+ * Maps {@link ChatColor} values to their Jansi equivalents.
  *
- * <p>This class might not always be instantiable as jansi might not be present at runtime.</p>
+ * <p>This class might not always be instantiable as Jansi might not be present at runtime.</p>
  *
  * @author Ronald Jack Jenkins Jr.
  */
 final class AnsiColorMapper implements ColorMapper {
 
+  /**
+   * Creates a new instance.
+   *
+   * <p>This class relies on Jansi. If this dependency is not present at runtime, it cannot be initialized as the JVM
+   * raises a {@code Throwable} due to missing dependencies.</p>
+   *
+   * <p>In this case callers of this constructor should fall back to an alternative {@code ColorMapper}
+   * implementation.</p>
+   *
+   * @throws Throwable if Jansi is not present at runtime
+   */
   AnsiColorMapper() throws Throwable {
-    // Calling this constructor could result in a Throwable because JAnsi, which is required to execute code
-    // in this class, might not be present at runtime, thus expected classes are not found.
+    //see javadoc
   }
 
   // @formatter:off

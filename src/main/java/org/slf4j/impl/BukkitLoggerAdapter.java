@@ -45,6 +45,7 @@
 package org.slf4j.impl;
 
 import info.ronjenkins.slf4bukkit.ColorMapper;
+import info.ronjenkins.slf4bukkit.ColorMapperFactory;
 import info.ronjenkins.slf4bukkit.ColorMarker;
 
 import java.io.IOException;
@@ -218,6 +219,7 @@ public final class BukkitLoggerAdapter implements Logger {
   // The logger name.
   private final String                         name;
   // The short name of this simple log instance
+  private final ColorMapper                    mapper                              = ColorMapperFactory.create();
   private transient String                     shortLogName                        = null;
 
   // NOTE: BukkitPluginLoggerAdapter constructor should have only package access
@@ -1043,6 +1045,6 @@ public final class BukkitLoggerAdapter implements Logger {
 
     // Log the message.
     logger.log(BukkitLoggerAdapter.slf4jLevelIntToBukkitJULLevel(level),
-               ColorMapper.map(buf.toString()));
+               mapper.map(buf.toString()));
   }
 }

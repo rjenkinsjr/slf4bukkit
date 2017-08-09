@@ -68,7 +68,6 @@ public enum ColorMarker implements Marker {
    */
   @Override
   public boolean contains(final Marker other) {
-    // TODO Auto-generated method stub
     return false;
   }
 
@@ -119,7 +118,6 @@ public enum ColorMarker implements Marker {
    */
   @Override
   public boolean hasReferences() {
-    // TODO Auto-generated method stub
     return false;
   }
 

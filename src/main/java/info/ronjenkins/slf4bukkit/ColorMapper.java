@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Ronald Jack Jenkins Jr.
+ * Copyright (C) 2016-2017 Ronald Jack Jenkins Jr., SLF4Bukkit contributors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,13 +19,15 @@ package info.ronjenkins.slf4bukkit;
 import org.bukkit.ChatColor;
 
 /**
- * Utility class that maps {@link ChatColor} values to their equivalents,
- * so that messages logged to the console are formatted correctly.
+ * Implementations of this interface map {@link ChatColor} values to their
+ * equivalents, based on what the current Bukkit implementation supports.
+ *
+ * @author Ronald Jack Jenkins Jr.
  */
 public interface ColorMapper {
 
   /**
-   * Translates {@link ChatColor} directives to their equivalents.
+   * Translates {@link ChatColor} directives to their string equivalents.
    *
    * @param input
    *          null is coerced to the empty string.

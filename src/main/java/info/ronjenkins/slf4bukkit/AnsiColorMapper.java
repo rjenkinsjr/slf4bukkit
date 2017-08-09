@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Ronald Jack Jenkins Jr.
+ * Copyright (C) 2016-2017 Ronald Jack Jenkins Jr., SLF4Bukkit contributors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,28 +25,20 @@ import org.fusesource.jansi.Ansi.Attribute;
 import java.util.Map;
 
 /**
- * Maps {@link ChatColor} values to their Jansi equivalents.
- *
- * <p>This class might not always be instantiable as Jansi might not be present at runtime.</p>
+ * Maps {@link ChatColor} values to their JAnsi equivalents.
  *
  * @author Ronald Jack Jenkins Jr.
  */
 final class AnsiColorMapper implements ColorMapper {
 
   /**
-   * Creates a new instance.
+   * No-op constructor. Callers must catch {@code Throwable} and handle the
+   * scenario in which JAnsi is not available by substituting another
+   * {@link ColorMapper} implementation.
    *
-   * <p>This class relies on Jansi. If this dependency is not present at runtime, it cannot be initialized as the JVM
-   * raises a {@code Throwable} due to missing dependencies.</p>
-   *
-   * <p>In this case callers of this constructor should fall back to an alternative {@code ColorMapper}
-   * implementation.</p>
-   *
-   * @throws Throwable if Jansi is not present at runtime
+   * @throws Throwable if JAnsi is not present at runtime.
    */
-  AnsiColorMapper() throws Throwable {
-    //see javadoc
-  }
+  AnsiColorMapper() throws Throwable {}
 
   // @formatter:off
   private final Map<ChatColor, String> MAP = ImmutableMap.<ChatColor, String>builder()

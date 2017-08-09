@@ -4,7 +4,7 @@
  */
 /*
  * Portions of this file are
- * Copyright (C) 2016 Ronald Jack Jenkins Jr.
+ * Copyright (C) 2016-2017 Ronald Jack Jenkins Jr., SLF4Bukkit contributors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -179,6 +179,14 @@ import com.google.common.collect.ImmutableMap;
  * This logger supports only {@link ColorMarker}s, which are used to format the
  * logged message and throwable. All other marker types are ignored. The usage
  * of markers does not affect whether or not a given logging level is enabled.
+ * </p>
+ *
+ * <p>
+ * When executed on a Bukkit implementation that does not contain the JAnsi
+ * library (e.g. PaperSpigot), all color-related functionality is silently
+ * ignored. Any messages logged in such an environment by SLF4Bukkit will have
+ * any {@link ChatColor} values stripped. SLF4Bukkit does not emit any warnings
+ * when executed in an environment where JAnsi is not available.
  * </p>
  *
  * @author Ceki G&uuml;lc&uuml;

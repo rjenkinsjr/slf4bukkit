@@ -243,10 +243,9 @@
     <!-- Things to do only for releases. -->
     <profile>
       <id>release</id>
-      <!-- TODO: uncomment once we reach 1.0.0 -->
-      <!--properties>
+      <properties>
         <site.profile>production</site.profile>
-      </properties-->
+      </properties>
       <build>
         <defaultGoal>clean deploy site-deploy</defaultGoal>
         <plugins>

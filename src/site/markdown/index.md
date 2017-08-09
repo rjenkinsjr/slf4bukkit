@@ -1,15 +1,15 @@
 ## Copyright (C) 2016-2017 Ronald Jack Jenkins Jr.
-##
+## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation, either version 3 of the License, or
 ## (at your option) any later version.
-##
+## 
 ## This program is distributed in the hope that it will be useful,
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
-##
+## 
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #set($h1 = '#')
@@ -43,19 +43,19 @@ slf4j:
   #
   # If not specified or given an invalid value, defaults to "info".
   defaultLogLevel: info
-
+  
   # Shows an "[SLF4J]" header for every message logged through SLF4Bukkit.
   #
   # If not specified or given an invalid value, defaults to "false".
   showHeader: false
-
+  
   # Shows the full logger name (e.g. "info.ronjenkins.bukkit.MyPlugin"),
   # wrapped in curly braces.
   #
   # If not specified or given an invalid value, defaults to "false". If true,
   # this overrides "slf4j.showShortLogName".
   showLogName: false
-
+  
   # Shows the short logger name, wrapped in curly braces. The short logger name
   # is the short Java package name format (e.g. a logger named
   # "info.ronjenkins.bukkit.MyPlugin" would have a short name of
@@ -64,13 +64,13 @@ slf4j:
   # If not specified or given an invalid value, defaults to "true". If
   # "slf4j.showLogName" is true, this option is ignored.
   showShortLogName: true
-
+  
   # Shows the name of the logging thread, wrapped in brackets. You probably
   # don't want this information unless you're helping troubleshoot a plugin.
   #
   # If not specified or given an invalid value, defaults to "false".
   showThreadName: false
-
+  
   # This section controls default colors for logging levels. Each entry in this
   # section maps one of SLF4J's logging levels to one of SLF4Bukkit's
   # ColorMarker values. The possible keys (levels) in this section are the
@@ -116,10 +116,10 @@ slf4j:
     info: NONE
     debug: NONE
     trace: NONE
-
+  
   # This section controls logging levels for individual loggers.
   log:
-
+  
     # For each element in this section, the key is the full logger name and the
     # value is the logging level for that logger. Possible logging levels are
     # the same as what's available for the "slf4j.defaultLogLevel" property

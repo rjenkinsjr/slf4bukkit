@@ -22,6 +22,13 @@ package info.ronjenkins.slf4bukkit;
  * current value and then continue adding content to this object. This class is
  * thread-safe.
  *
+ * <p>
+ * Plugins can use this class even if they will be executed in environments
+ * where JAnsi is not available (e.g. PaperSpigot) because all colors are
+ * stripped when the message is logged. This class does not depend on JAnsi,
+ * so it is safe to use in such environments.
+ * </p>
+ *
  * @author Ronald Jack Jenkins Jr.
  */
 public final class ColorString {

@@ -24,6 +24,8 @@ package info.ronjenkins.slf4bukkit;
  */
 public final class ColorMapperFactory {
 
+  private ColorMapperFactory() {}
+
   /**
    * Creates an new {@code ColorMapper} instance.
    *

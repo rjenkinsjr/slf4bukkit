@@ -1,5 +1,5 @@
 <!---
-  Copyright (C) 2016 Ronald Jack Jenkins Jr.
+  Copyright (C) 2016-2017 Ronald Jack Jenkins Jr.
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ If you wish to use [SLF4J](http://slf4j.org) in your Bukkit plugin, or if your p
 <dependency>
   <groupId>info.ronjenkins</groupId>
   <artifactId>slf4bukkit</artifactId>
-  <version>0.1.5</version>
+  <version>1.0.0</version>
 </dependency>
 ```
 
@@ -41,3 +41,5 @@ If you wish to use [SLF4J](http://slf4j.org) in your Bukkit plugin, or if your p
     + In addition to using ColorMarkers, you can use Bukkit's `ChatColor` values to further format your message.
     + SLF4Bukkit issues `ChatColor.RESET` after every log message, so you don't have to worry about resetting after each message.
     + You can use the [ColorString](http://rjenkinsjr.github.io/slf4bukkit/apidocs/info/ronjenkins/slf4bukkit/ColorString.html) class to easily create colored log messages.
+    + For a consistent user experience, it's recommended that you perform all logging via SLF4Bukkit and not use `Plugin.getLogger()`.
+    + Any color-related features are silently stripped/ignored when SLF4Bukkit runs on a Bukkit implementation where JAnsi is not available (e.g. PaperSpigot).

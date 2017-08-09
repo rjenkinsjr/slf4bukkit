@@ -4,7 +4,7 @@
  */
 /*
  * Portions of this file are
- * Copyright (C) 2016 Ronald Jack Jenkins Jr.
+ * Copyright (C) 2016-2017 Ronald Jack Jenkins Jr., SLF4Bukkit contributors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@
 package org.slf4j.impl;
 
 import info.ronjenkins.slf4bukkit.ColorMapper;
+import info.ronjenkins.slf4bukkit.ColorMapperFactory;
 import info.ronjenkins.slf4bukkit.ColorMarker;
 
 import java.io.IOException;
@@ -180,6 +181,14 @@ import com.google.common.collect.ImmutableMap;
  * of markers does not affect whether or not a given logging level is enabled.
  * </p>
  *
+ * <p>
+ * When executed on a Bukkit implementation that does not contain the JAnsi
+ * library (e.g. PaperSpigot), all color-related functionality is silently
+ * ignored. Any messages logged in such an environment by SLF4Bukkit will have
+ * any {@link ChatColor} values stripped. SLF4Bukkit does not emit any warnings
+ * when executed in an environment where JAnsi is not available.
+ * </p>
+ *
  * @author Ceki G&uuml;lc&uuml;
  * @author <a href="mailto:sanders@apache.org">Scott Sanders</a>
  * @author Rod Waldhoff
@@ -218,6 +227,7 @@ public final class BukkitLoggerAdapter implements Logger {
   // The logger name.
   private final String                         name;
   // The short name of this simple log instance
+  private final ColorMapper                    mapper                              = ColorMapperFactory.create();
   private transient String                     shortLogName                        = null;
 
   // NOTE: BukkitPluginLoggerAdapter constructor should have only package access
@@ -1043,6 +1053,6 @@ public final class BukkitLoggerAdapter implements Logger {
 
     // Log the message.
     logger.log(BukkitLoggerAdapter.slf4jLevelIntToBukkitJULLevel(level),
-               ColorMapper.map(buf.toString()));
+               mapper.map(buf.toString()));
   }
 }

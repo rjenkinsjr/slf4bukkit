@@ -1,4 +1,4 @@
-## Copyright (C) 2016 Ronald Jack Jenkins Jr.
+## Copyright (C) 2016-2017 Ronald Jack Jenkins Jr.
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -106,6 +106,10 @@ slf4j:
   #   YELLOW
   #   WHITE
   #   NONE (default console color)
+  #
+  # If you are running this plugin on a Bukkit implementation that does not
+  # include the JAnsi library (e.g. PaperSpigot), none of these configuration
+  # values will be honored and all log output will have no colors.
   colors:
     error: RED
     warn: YELLOW

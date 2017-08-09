@@ -26,6 +26,11 @@ import org.slf4j.Marker;
  * SLF4J markers that map to a subset of {@link ChatColor}s. These markers never
  * contain any references (other markers).
  *
+ * <p>
+ * This class does not depend on JAnsi, so it is safe to use even in
+ * environments where JAnsi is not available (e.g. PaperSpigot).
+ * </p>
+ *
  * @author Ronald Jack Jenkins Jr.
  */
 public enum ColorMarker implements Marker {
@@ -68,7 +73,6 @@ public enum ColorMarker implements Marker {
    */
   @Override
   public boolean contains(final Marker other) {
-    // TODO Auto-generated method stub
     return false;
   }
 
@@ -119,7 +123,6 @@ public enum ColorMarker implements Marker {
    */
   @Override
   public boolean hasReferences() {
-    // TODO Auto-generated method stub
     return false;
   }
 

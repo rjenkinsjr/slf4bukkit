@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017 Ronald Jack Jenkins Jr., SLF4Bukkit contributors.
+ * Copyright (C) 2017 TheE, Ronald Jack Jenkins Jr, SLF4Bukkit contributors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,20 +19,22 @@ package info.ronjenkins.slf4bukkit;
 import org.bukkit.ChatColor;
 
 /**
- * Implementations of this interface map {@link ChatColor} values to their
- * equivalents, based on what the current Bukkit implementation supports.
+ * Strips all {@link ChatColor}s from the input string.
  *
- * @author Ronald Jack Jenkins Jr.
+ * @author TheE
  */
-public interface ColorMapper {
+final class NotSupportedColorMapper implements ColorMapper {
 
-  /**
-   * Translates {@link ChatColor} directives to their string equivalents.
-   *
-   * @param input
-   *          null is coerced to the empty string.
-   * @return never null.
-   */
-  String map(String input);
+  @Override
+  public String map(final String input) {
+    if (input == null) {
+      return "";
+    }
+    String output = input;
+    for (final ChatColor chatColor : ChatColor.values()) {
+      output = output.replace(chatColor.toString(), "");
+    }
+    return output;
+  }
 
 }
